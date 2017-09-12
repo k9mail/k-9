@@ -208,10 +208,10 @@
             android:title="@string/account_settings_always_show_cc_bcc_label" />
 
         <CheckBoxPreference
-        android:persistent="false"
-        android:key="message_read_receipt"
-        android:title="@string/account_settings_message_read_receipt_label"
-        android:summary="@string/account_settings_message_read_receipt_summary" />
+            android:persistent="false"
+            android:key="message_read_receipt"
+            android:title="@string/account_settings_message_read_receipt_label"
+            android:summary="@string/account_settings_message_read_receipt_summary" />
 
         <ListPreference
             android:persistent="false"
@@ -441,8 +441,8 @@
     </PreferenceScreen>
 
     <PreferenceScreen
-            android:title="@string/account_settings_search"
-            android:key="search">
+        android:title="@string/account_settings_search"
+        android:key="search">
 
         <CheckBoxPreference
             android:key="remote_search_enabled"
@@ -459,14 +459,12 @@
             android:dialogTitle="@string/account_settings_remote_search_num_label"
             android:dependency="remote_search_enabled"/>
 
-        <!-- Temporarily removed
         <CheckBoxPreference
             android:key="account_remote_search_full_text"
             android:title="@string/account_settings_remote_search_full_text"
             android:summary="@string/account_settings_remote_search_full_text_summary"
             android:persistent="false"
             android:dependency="remote_search_enabled"/>
-        -->
 
     </PreferenceScreen>
 

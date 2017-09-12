@@ -184,11 +184,7 @@ public class AccountSettings extends K9PreferenceActivity {
     private CheckBoxPreference cloudSearchEnabled;
     private ListPreference remoteSearchNumResults;
 
-    /*
-     * Temporarily removed because search results aren't displayed to the user.
-     * So this feature is useless.
-     */
-    //private CheckBoxPreference mRemoteSearchFullText;
+    private CheckBoxPreference mRemoteSearchFullText;
 
     private ListPreference localStorageProvider;
     private ListPreference archiveFolder;
@@ -516,7 +512,7 @@ public class AccountSettings extends K9PreferenceActivity {
                 }
             }
         );
-        //mRemoteSearchFullText = (CheckBoxPreference) findPreference(PREFERENCE_REMOTE_SEARCH_FULL_TEXT);
+        mRemoteSearchFullText = (CheckBoxPreference) findPreference(PREFERENCE_REMOTE_SEARCH_FULL_TEXT);
 
         pushPollOnConnect = (CheckBoxPreference) findPreference(PREFERENCE_PUSH_POLL_ON_CONNECT);
         idleRefreshPeriod = (ListPreference) findPreference(PREFERENCE_IDLE_REFRESH_PERIOD);
@@ -528,7 +524,7 @@ public class AccountSettings extends K9PreferenceActivity {
             String searchNumResults = Integer.toString(account.getRemoteSearchNumResults());
             remoteSearchNumResults.setValue(searchNumResults);
             updateRemoteSearchLimit(searchNumResults);
-            //mRemoteSearchFullText.setChecked(account.isRemoteSearchFullText());
+            mRemoteSearchFullText.setChecked(account.isRemoteSearchFullText());
 
             idleRefreshPeriod.setValue(String.valueOf(account.getIdleRefreshMinutes()));
             idleRefreshPeriod.setSummary(idleRefreshPeriod.getEntry());
@@ -814,7 +810,7 @@ public class AccountSettings extends K9PreferenceActivity {
             account.setMaxPushFolders(Integer.parseInt(mMaxPushFolders.getValue()));
             account.setAllowRemoteSearch(cloudSearchEnabled.isChecked());
             account.setRemoteSearchNumResults(Integer.parseInt(remoteSearchNumResults.getValue()));
-            //account.setRemoteSearchFullText(mRemoteSearchFullText.isChecked());
+            account.setRemoteSearchFullText(mRemoteSearchFullText.isChecked());
         }
 
         boolean needsRefresh = account.setAutomaticCheckIntervalMinutes(Integer.parseInt(checkFrequency.getValue()));

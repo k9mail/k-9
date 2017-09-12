@@ -1076,6 +1076,9 @@ Please submit bug reports, contribute new features and ask questions at
     <string name="pull_to_refresh_remote_search_from_local_search_release">Release to search server…</string>
     <string name="remote_search_unavailable_no_network">A network connection is required for server search.</string>
 
+    <string name="account_settings_remote_search_full_text">Enable full text search</string>
+    <string name="account_settings_remote_search_full_text_summary">Search the contents of the messages on the server</string>
+
     <string name="global_settings_background_as_unread_indicator_label">Change colour when read</string>
     <string name="global_settings_background_as_unread_indicator_summary">A different background will show that the message has been read</string>
 

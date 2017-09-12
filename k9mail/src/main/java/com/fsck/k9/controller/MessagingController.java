@@ -603,7 +603,7 @@ public class MessagingController {
                 remoteMessages = remoteMessages.subList(0, resultLimit);
             }
 
-            loadSearchResultsSynchronous(remoteMessages, localFolder, remoteFolder, listener);
+            loadSearchResultsSynchronous(remoteMessages, acct, localFolder, remoteFolder);
 
 
         } catch (Exception e) {
@@ -646,7 +646,7 @@ public class MessagingController {
                         throw new MessagingException("Folder not found");
                     }
 
-                    loadSearchResultsSynchronous(messages, localFolder, remoteFolder, listener);
+                    loadSearchResultsSynchronous(messages, account, localFolder, remoteFolder);
                 } catch (MessagingException e) {
                     Timber.e(e, "Exception in loadSearchResults");
                     addErrorMessage(account, null, e);
@@ -659,27 +659,9 @@ public class MessagingController {
         });
     }
 
-    private void loadSearchResultsSynchronous(List<Message> messages, LocalFolder localFolder, Folder remoteFolder,
-            MessagingListener listener) throws MessagingException {
-        final FetchProfile header = new FetchProfile();
-        header.add(FetchProfile.Item.FLAGS);
-        header.add(FetchProfile.Item.ENVELOPE);
-        final FetchProfile structure = new FetchProfile();
-        structure.add(FetchProfile.Item.STRUCTURE);
-
-        int i = 0;
-        for (Message message : messages) {
-            i++;
-            LocalMessage localMsg = localFolder.getMessage(message.getUid());
-
-            if (localMsg == null) {
-                remoteFolder.fetch(Collections.singletonList(message), header, null);
-                //fun fact: ImapFolder.fetch can't handle getting STRUCTURE at same time as headers
-                remoteFolder.fetch(Collections.singletonList(message), structure, null);
-                localFolder.appendMessages(Collections.singletonList(message));
-                localMsg = localFolder.getMessage(message.getUid());
-            }
-        }
+    private void loadSearchResultsSynchronous(List<Message> messages, Account account, LocalFolder localFolder,
+            Folder remoteFolder) throws MessagingException {
+        messageDownloader.downloadMessages(account, remoteFolder, localFolder, messages, false, true);
     }
 
 
