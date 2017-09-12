@@ -14,6 +14,7 @@ public class Commands {
     public static final String LOGIN = "LOGIN";
     public static final String LIST = "LIST";
     public static final String NOOP = "NOOP";
+    public static final String ENABLE = "ENABLE";
     public static final String UID_SEARCH = "UID SEARCH";
     public static final String UID_STORE = "UID STORE";
     public static final String UID_FETCH = "UID FETCH";

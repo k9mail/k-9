@@ -98,14 +98,14 @@ public class LocalStore extends Store implements Serializable {
      * in the correct order.
      */
     static String GET_MESSAGES_COLS =
-        "subject, sender_list, date, uid, flags, messages.id, to_list, cc_list, " +
-        "bcc_list, reply_to_list, attachment_count, internal_date, messages.message_id, " +
-        "folder_id, preview, threads.id, threads.root, deleted, read, flagged, answered, " +
-        "forwarded, message_part_id, messages.mime_type, preview_type, header ";
+            "subject, sender_list, date, uid, flags, messages.id, to_list, cc_list, " +
+                    "bcc_list, reply_to_list, attachment_count, internal_date, messages.message_id, " +
+                    "folder_id, preview, threads.id, threads.root, deleted, read, flagged, answered, " +
+                    "forwarded, message_part_id, messages.mime_type, preview_type, header ";
 
     static final String GET_FOLDER_COLS =
-        "folders.id, name, visible_limit, last_updated, status, push_state, last_pushed, " +
-        "integrate, top_group, poll_class, push_class, display_class, notify_class, more_messages";
+            "folders.id, name, visible_limit, last_updated, status, push_state, last_pushed, integrate, top_group, " +
+                    "poll_class, push_class, display_class, notify_class, more_messages, uid_validity, highest_mod_seq";
 
     static final int FOLDER_ID_INDEX = 0;
     static final int FOLDER_NAME_INDEX = 1;
@@ -121,6 +121,8 @@ public class LocalStore extends Store implements Serializable {
     static final int FOLDER_DISPLAY_CLASS_INDEX = 11;
     static final int FOLDER_NOTIFY_CLASS_INDEX = 12;
     static final int MORE_MESSAGES_INDEX = 13;
+    static final int FOLDER_UID_VALIDITY_INDEX = 14;
+    static final int FOLDER_HIGHEST_MOD_SEQ_INDEX = 15;
 
     static final String[] UID_CHECK_PROJECTION = { "uid" };
 
@@ -153,7 +155,7 @@ public class LocalStore extends Store implements Serializable {
      */
     private static final int THREAD_FLAG_UPDATE_BATCH_SIZE = 500;
 
-    public static final int DB_VERSION = 60;
+    public static final int DB_VERSION = 61;
 
 
     public static String getColumnNameForFlag(Flag flag) {
@@ -279,7 +281,7 @@ public class LocalStore extends Store implements Serializable {
         final StorageManager storageManager = StorageManager.getInstance(context);
 
         final File attachmentDirectory = storageManager.getAttachmentDirectory(uUid,
-                                         database.getStorageProviderId());
+                database.getStorageProviderId());
 
         return database.execute(false, new DbCallback<Long>() {
             @Override
@@ -497,12 +499,12 @@ public class LocalStore extends Store implements Serializable {
                 Cursor cursor = null;
                 try {
                     cursor = db.query("pending_commands",
-                                      new String[] { "id", "command", "data" },
-                                      null,
-                                      null,
-                                      null,
-                                      null,
-                                      "id ASC");
+                            new String[] { "id", "command", "data" },
+                            null,
+                            null,
+                            null,
+                            null,
+                            "id ASC");
                     List<PendingCommand> commands = new ArrayList<>();
                     while (cursor.moveToNext()) {
                         long databaseId = cursor.getLong(0);
@@ -564,7 +566,7 @@ public class LocalStore extends Store implements Serializable {
     }
 
     public List<LocalMessage> searchForMessages(MessageRetrievalListener<LocalMessage> retrievalListener,
-                                        LocalSearch search) throws MessagingException {
+            LocalSearch search) throws MessagingException {
 
         StringBuilder query = new StringBuilder();
         List<String> queryArgs = new ArrayList<>();
@@ -594,9 +596,9 @@ public class LocalStore extends Store implements Serializable {
      * call the MessageRetrievalListener for each one
      */
     List<LocalMessage> getMessages(
-        final MessageRetrievalListener<LocalMessage> listener,
-        final LocalFolder folder,
-        final String queryString, final String[] placeHolders
+            final MessageRetrievalListener<LocalMessage> listener,
+            final LocalFolder folder,
+            final String queryString, final String[] placeHolders
     ) throws MessagingException {
         final List<LocalMessage> messages = new ArrayList<>();
         final int j = database.execute(false, new DbCallback<Integer>() {
@@ -935,15 +937,15 @@ public class LocalStore extends Store implements Serializable {
                     folder.refresh(name, prefHolder);   // Recover settings from Preferences
 
                     db.execSQL("INSERT INTO folders (name, visible_limit, top_group, display_class, poll_class, notify_class, push_class, integrate) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", new Object[] {
-                                   name,
-                                   visibleLimit,
-                                   prefHolder.inTopGroup ? 1 : 0,
-                                   prefHolder.displayClass.name(),
-                                   prefHolder.syncClass.name(),
-                                   prefHolder.notifyClass.name(),
-                                   prefHolder.pushClass.name(),
-                                   prefHolder.integrate ? 1 : 0,
-                               });
+                            name,
+                            visibleLimit,
+                            prefHolder.inTopGroup ? 1 : 0,
+                            prefHolder.displayClass.name(),
+                            prefHolder.syncClass.name(),
+                            prefHolder.notifyClass.name(),
+                            prefHolder.pushClass.name(),
+                            prefHolder.integrate ? 1 : 0,
+                    });
 
                 }
                 return null;
@@ -1189,11 +1191,11 @@ public class LocalStore extends Store implements Serializable {
                     throws UnavailableStorageException {
 
                 db.execSQL("UPDATE messages SET " + flagColumn + " = " + ((newState) ? "1" : "0") +
-                        " WHERE id IN (" +
-                        "SELECT m.id FROM threads t " +
-                        "LEFT JOIN messages m ON (t.message_id = m.id) " +
-                        "WHERE m.empty = 0 AND m.deleted = 0 " +
-                        "AND t.root" + selectionSet + ")",
+                                " WHERE id IN (" +
+                                "SELECT m.id FROM threads t " +
+                                "LEFT JOIN messages m ON (t.message_id = m.id) " +
+                                "WHERE m.empty = 0 AND m.deleted = 0 " +
+                                "AND t.root" + selectionSet + ")",
                         selectionArgs);
             }
 
@@ -1253,9 +1255,9 @@ public class LocalStore extends Store implements Serializable {
                 } else {
                     String sql =
                             "SELECT m.uid, f.name " +
-                            "FROM messages m " +
-                            "LEFT JOIN folders f ON (m.folder_id = f.id) " +
-                            "WHERE m.empty = 0 AND m.id" + selectionSet;
+                                    "FROM messages m " +
+                                    "LEFT JOIN folders f ON (m.folder_id = f.id) " +
+                                    "WHERE m.empty = 0 AND m.id" + selectionSet;
 
                     getDataFromCursor(db.rawQuery(sql, selectionArgs));
                 }

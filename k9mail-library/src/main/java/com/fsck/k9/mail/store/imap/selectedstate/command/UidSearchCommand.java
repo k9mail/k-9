@@ -13,6 +13,7 @@ import com.fsck.k9.mail.MessagingException;
 import com.fsck.k9.mail.store.imap.Commands;
 import com.fsck.k9.mail.store.imap.ImapConnection;
 import com.fsck.k9.mail.store.imap.ImapFolder;
+import com.fsck.k9.mail.store.imap.ImapMessage;
 import com.fsck.k9.mail.store.imap.ImapResponse;
 import com.fsck.k9.mail.store.imap.ImapUtility;
 import com.fsck.k9.mail.store.imap.selectedstate.response.UidSearchResponse;

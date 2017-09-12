@@ -256,6 +256,12 @@ Please submit bug reports, contribute new features and ask questions at
     <string name="debug_enable_debug_logging_summary">Log extra diagnostic information</string>
     <string name="debug_enable_sensitive_logging_title">Log sensitive information</string>
     <string name="debug_enable_sensitive_logging_summary">May show passwords in logs.</string>
+    <string name="debug_do_not_use_condstore_extension_summary">Do not use the CONDSTORE extension even if available
+        during synchronization</string>
+    <string name="debug_do_not_use_condstore_extension_title">Don\'t use CONDSTORE</string>
+    <string name="debug_do_not_use_qresync_extension_summary">Do not use the QRESYNC extension even if available during
+        synchronization</string>
+    <string name="debug_do_not_use_qresync_extension_title">Don\'t use QRESYNC</string>
 
     <string name="message_list_load_more_messages_action">Load more messages</string>
     <string name="message_to_fmt">To:<xliff:g id="counterParty">%s</xliff:g></string>

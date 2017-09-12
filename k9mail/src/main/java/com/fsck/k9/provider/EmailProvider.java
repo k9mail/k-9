@@ -99,6 +99,8 @@ public class EmailProvider extends ContentProvider {
             FolderColumns.UNREAD_COUNT,
             FolderColumns.VISIBLE_LIMIT,
             FolderColumns.STATUS,
+            FolderColumns.UID_VALIDITY,
+            FolderColumns.HIGHEST_MOD_SEQ,
             FolderColumns.PUSH_STATE,
             FolderColumns.LAST_PUSHED,
             FolderColumns.FLAGGED_COUNT,
@@ -166,6 +168,8 @@ public class EmailProvider extends ContentProvider {
         String UNREAD_COUNT = "unread_count";
         String VISIBLE_LIMIT = "visible_limit";
         String STATUS = "status";
+        String UID_VALIDITY = "uid_validity";
+        String HIGHEST_MOD_SEQ = "highest_mod_seq";
         String PUSH_STATE = "push_state";
         String LAST_PUSHED = "last_pushed";
         String FLAGGED_COUNT = "flagged_count";
@@ -445,8 +449,8 @@ public class EmailProvider extends ContentProvider {
 
         query.append(
                 " FROM " + MESSAGES_TABLE + " m " +
-                "JOIN " + THREADS_TABLE + " t " +
-                "ON (t." + ThreadColumns.MESSAGE_ID + " = m." + MessageColumns.ID + ")");
+                        "JOIN " + THREADS_TABLE + " t " +
+                        "ON (t." + ThreadColumns.MESSAGE_ID + " = m." + MessageColumns.ID + ")");
 
         if (Utility.arrayContainsAny(projection, (Object[]) FOLDERS_COLUMNS)) {
             query.append(" JOIN " + FOLDERS_TABLE + " f " +
@@ -471,7 +475,7 @@ public class EmailProvider extends ContentProvider {
 
         query.append(
                 ") AND " +
-                InternalMessageColumns.DELETED + " = 0 AND " + InternalMessageColumns.EMPTY + " = 0");
+                        InternalMessageColumns.DELETED + " = 0 AND " + InternalMessageColumns.EMPTY + " = 0");
 
         query.append(" GROUP BY t." + ThreadColumns.ROOT);
     }

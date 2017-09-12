@@ -770,7 +770,7 @@ public class ImapConnectionTest {
     public void open_withIoExceptionDuringListCommand_shouldThrow() throws Exception {
         settings.setAuthType(AuthType.PLAIN);
         MockImapServer server = new MockImapServer();
-        simplePreAuthAndLoginDialog(server, "");
+        simplePreAuthAndLoginDialog(server, "IMAP4 IMAP4REV1");
         server.expect("3 LIST \"\" \"\"");
         server.output("* Now what?");
         ImapConnection imapConnection = startServerAndCreateImapConnection(server);
@@ -789,10 +789,33 @@ public class ImapConnectionTest {
     public void open_withNegativeResponseToListCommand() throws Exception {
         settings.setAuthType(AuthType.PLAIN);
         MockImapServer server = new MockImapServer();
-        simplePreAuthAndLoginDialog(server, "");
+        simplePreAuthAndLoginDialog(server, "IMAP4 IMAP4REV1");
         server.expect("3 LIST \"\" \"\"");
         server.output("3 NO");
         ImapConnection imapConnection = startServerAndCreateImapConnection(server);
+
+        imapConnection.open();
+
+        server.verifyConnectionStillOpen();
+        server.verifyInteractionCompleted();
+    }
+
+    @Test
+    public void open_withQresyncCapability_shouldEnableQresync() throws Exception {
+        MockImapServer server = new MockImapServer();
+        simpleOpenWithQresyncEnabled(server);
+        ImapConnection imapConnection = startServerAndCreateImapConnection(server);
+
+        imapConnection.open();
+
+        server.verifyConnectionStillOpen();
+        server.verifyInteractionCompleted();
+    }
+
+    @Test
+    public void open_withoutQresyncCapability_shouldNotEnableQresync() throws Exception {
+        MockImapServer server = new MockImapServer();
+        ImapConnection imapConnection = simpleOpen(server);
 
         imapConnection.open();
 
@@ -882,6 +905,56 @@ public class ImapConnectionTest {
     }
 
     @Test
+    public void isCondstoreCapable_withoutCondstoreCapability() throws Exception {
+        MockImapServer server = new MockImapServer();
+        ImapConnection imapConnection = simpleOpen(server);
+
+        boolean result = imapConnection.isCondstoreCapable();
+
+        assertFalse(result);
+
+        server.shutdown();
+    }
+
+    @Test
+    public void isCondstoreCapable_withCondstoreCapability() throws Exception {
+        MockImapServer server = new MockImapServer();
+        ImapConnection imapConnection = simpleOpenWithCapabilities(server, "CONDSTORE");
+
+        boolean result = imapConnection.isCondstoreCapable();
+
+        assertTrue(result);
+
+        server.shutdown();
+    }
+
+    @Test
+    public void isQresyncCapable_withoutQresyncCapability() throws Exception {
+        MockImapServer server = new MockImapServer();
+        ImapConnection imapConnection = simpleOpen(server);
+
+        boolean result = imapConnection.isQresyncCapable();
+
+        assertFalse(result);
+
+        server.shutdown();
+    }
+
+    @Test
+    public void isQresyncCapable_withQresyncCapability() throws Exception {
+        MockImapServer server = new MockImapServer();
+        simpleOpenWithQresyncEnabled(server);
+        ImapConnection imapConnection = startServerAndCreateImapConnection(server);
+        imapConnection.open();
+
+        boolean result = imapConnection.isQresyncCapable();
+
+        assertTrue(result);
+
+        server.shutdown();
+    }
+
+    @Test
     public void sendContinuation() throws Exception {
         settings.setAuthType(AuthType.PLAIN);
         MockImapServer server = new MockImapServer();
@@ -901,6 +974,18 @@ public class ImapConnectionTest {
         server.verifyInteractionCompleted();
     }
 
+    @Test
+    public void enableQresync_withQresyncAlreadyEnabled_shouldNotSendEnableCommand() throws Exception {
+        MockImapServer server = new MockImapServer();
+        simpleOpenWithQresyncEnabled(server);
+        ImapConnection imapConnection = startServerAndCreateImapConnection(server);
+        imapConnection.open();
+
+        imapConnection.enableQresync();
+
+        server.verifyConnectionStillOpen();
+        server.verifyInteractionCompleted();
+    }
 
     private ImapConnection createImapConnection(ImapSettings settings, TrustedSocketFactory socketFactory,
             ConnectivityManager connectivityManager, OAuth2TokenProvider oAuth2TokenProvider) {
@@ -916,7 +1001,7 @@ public class ImapConnectionTest {
     }
 
     private ImapConnection simpleOpen(MockImapServer server) throws Exception {
-        return simpleOpenWithCapabilities(server, "");
+        return simpleOpenWithCapabilities(server, "IMAP4 IMAP4REV1");
     }
 
     private ImapConnection simpleOpenWithCapabilities(MockImapServer server, String postAuthCapabilities)
@@ -973,6 +1058,14 @@ public class ImapConnectionTest {
 
         server.expect("2 LOGIN \"" + USERNAME + "\" \"" + PASSWORD + "\"");
         server.output("2 OK [CAPABILITY " + postAuthCapabilities + "] LOGIN completed");
+    }
+
+    private void simpleOpenWithQresyncEnabled(MockImapServer server) {
+        simplePreAuthAndLoginDialog(server, "CONDSTORE QRESYNC ENABLE");
+        server.expect("3 ENABLE CONDSTORE QRESYNC");
+        server.output("* ENABLED CONDSTORE QRESYNC");
+        server.output("3 OK command completed");
+        simplePostAuthenticationDialog(server, 4);
     }
 
     private OAuth2TokenProvider createOAuth2TokenProvider() throws AuthenticationFailedException {

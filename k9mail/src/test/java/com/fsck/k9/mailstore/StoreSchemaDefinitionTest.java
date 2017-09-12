@@ -339,6 +339,7 @@ public class StoreSchemaDefinitionTest {
         localStore.database = lockableDatabase;
         when(localStore.getContext()).thenReturn(context);
         when(localStore.getAccount()).thenReturn(account);
+        when(localStore.getDatabase()).thenReturn(lockableDatabase);
 
         return new StoreSchemaDefinition(localStore);
     }

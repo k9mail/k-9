@@ -4,6 +4,7 @@ package com.fsck.k9.mail.store.imap.selectedstate.response;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fsck.k9.mail.store.imap.ImapList;
 import com.fsck.k9.mail.store.imap.ImapResponse;
 import com.fsck.k9.mail.store.imap.Responses;
 
@@ -50,6 +51,10 @@ public class UidSearchResponse extends SelectedStateResponse {
         }
         int end = response.size();
         for (int i = 1; i < end; i++) {
+            if (response.get(i) instanceof ImapList) {
+                continue;
+            }
+          
             try {
                 long number = response.getLong(i);
                 numbers.add(number);

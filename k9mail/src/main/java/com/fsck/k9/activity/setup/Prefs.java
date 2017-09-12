@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
+import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceScreen;
 import android.text.TextUtils;
@@ -94,6 +95,8 @@ public class Prefs extends K9PreferenceActivity {
     private static final String PREFERENCE_BACKGROUND_OPS = "background_ops";
     private static final String PREFERENCE_DEBUG_LOGGING = "debug_logging";
     private static final String PREFERENCE_SENSITIVE_LOGGING = "sensitive_logging";
+    private static final String PREFERENCE_DO_NOT_USE_CONDSTORE = "condstore_extension";
+    private static final String PREFERENCE_DO_NOT_USE_QRESYNC = "qresync_extension";
 
     private static final String PREFERENCE_ATTACHMENT_DEF_PATH = "attachment_default_path";
     private static final String PREFERENCE_BACKGROUND_AS_UNREAD_INDICATOR = "messagelist_background_as_unread_indicator";
@@ -143,6 +146,8 @@ public class Prefs extends K9PreferenceActivity {
     private ListPreference mBackgroundOps;
     private CheckBoxPreference mDebugLogging;
     private CheckBoxPreference mSensitiveLogging;
+    private CheckBoxPreference doNotUseCondstore;
+    private CheckBoxPreference doNotUseQresync;
     private CheckBoxPreference mHideUserAgent;
     private CheckBoxPreference mHideTimeZone;
     private CheckBoxPreference mWrapFolderNames;
@@ -354,11 +359,33 @@ public class Prefs extends K9PreferenceActivity {
 
         mDebugLogging = (CheckBoxPreference)findPreference(PREFERENCE_DEBUG_LOGGING);
         mSensitiveLogging = (CheckBoxPreference)findPreference(PREFERENCE_SENSITIVE_LOGGING);
+        doNotUseCondstore = (CheckBoxPreference) findPreference(PREFERENCE_DO_NOT_USE_CONDSTORE);
+        doNotUseQresync = (CheckBoxPreference) findPreference(PREFERENCE_DO_NOT_USE_QRESYNC);
         mHideUserAgent = (CheckBoxPreference)findPreference(PREFERENCE_HIDE_USERAGENT);
         mHideTimeZone = (CheckBoxPreference)findPreference(PREFERENCE_HIDE_TIMEZONE);
 
         mDebugLogging.setChecked(K9.isDebug());
         mSensitiveLogging.setChecked(K9.DEBUG_SENSITIVE);
+        doNotUseCondstore.setChecked(!K9.shouldUseCondstore());
+        doNotUseCondstore.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object newValue) {
+                if (newValue instanceof Boolean && (Boolean) newValue) {
+                    doNotUseQresync.setChecked(true);
+                }
+                return true;
+            }
+        });
+        doNotUseQresync.setChecked(!K9.shouldUseQresync());
+        doNotUseQresync.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object newValue) {
+                if (newValue instanceof Boolean && !(Boolean) newValue) {
+                    doNotUseCondstore.setChecked(false);
+                }
+                return true;
+            }
+        });
         mHideUserAgent.setChecked(K9.hideUserAgent());
         mHideTimeZone.setChecked(K9.hideTimeZone());
 
@@ -534,6 +561,8 @@ public class Prefs extends K9PreferenceActivity {
         }
         K9.setDebug(mDebugLogging.isChecked());
         K9.DEBUG_SENSITIVE = mSensitiveLogging.isChecked();
+        K9.setUseCondstore(!doNotUseCondstore.isChecked());
+        K9.setUseQresync(!doNotUseQresync.isChecked());
         K9.setHideUserAgent(mHideUserAgent.isChecked());
         K9.setHideTimeZone(mHideTimeZone.isChecked());
 

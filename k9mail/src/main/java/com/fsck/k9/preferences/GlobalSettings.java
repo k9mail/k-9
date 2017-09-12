@@ -82,6 +82,12 @@ public class GlobalSettings {
         s.put("enableSensitiveLogging", Settings.versions(
                 new V(1, new BooleanSetting(false))
         ));
+        s.put("useCondstore", Settings.versions(
+                new V(48, new BooleanSetting(true))
+        ));
+        s.put("useQresync", Settings.versions(
+                new V(48, new BooleanSetting(true))
+        ));
         s.put("fontSizeAccountDescription", Settings.versions(
                 new V(1, new FontSizeSetting(FontSizes.FONT_DEFAULT))
         ));

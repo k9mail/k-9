@@ -42,8 +42,6 @@ import com.fsck.k9.mail.store.imap.selectedstate.response.UidCopyResponse;
 import com.fsck.k9.mail.store.imap.selectedstate.response.UidSearchResponse;
 import timber.log.Timber;
 
-import static com.fsck.k9.mail.store.imap.ImapUtility.getLastResponse;
-
 
 public class ImapFolder extends Folder<ImapMessage> {
     private static final ThreadLocal<SimpleDateFormat> RFC3501_DATE = new ThreadLocal<SimpleDateFormat>() {
@@ -54,10 +52,14 @@ public class ImapFolder extends Folder<ImapMessage> {
     };
     private static final int MORE_MESSAGES_WINDOW_SIZE = 500;
     private static final int FETCH_WINDOW_SIZE = 100;
+    public static final int INVALID_UID_VALIDITY = -1;
+    public static final int INVALID_HIGHEST_MOD_SEQ = -1;
 
 
     protected volatile int messageCount = -1;
     protected volatile long uidNext = -1L;
+    private long uidValidity = INVALID_UID_VALIDITY;
+    private long highestModSeq = INVALID_HIGHEST_MOD_SEQ;
     protected volatile ImapConnection connection;
     protected ImapStore store = null;
     protected Map<Long, String> msgSeqUidMap = new ConcurrentHashMap<Long, String>();
@@ -117,19 +119,30 @@ public class ImapFolder extends Folder<ImapMessage> {
 
     @Override
     public void open(int mode) throws MessagingException {
-        internalOpen(mode);
+        internalOpen(mode, INVALID_UID_VALIDITY, INVALID_HIGHEST_MOD_SEQ);
 
         if (messageCount == -1) {
             throw new MessagingException("Did not find message count during open");
         }
     }
 
-    protected List<ImapResponse> internalOpen(int mode) throws MessagingException {
+    public QresyncParamResponse openUsingQresyncParam(int mode, long cachedUidValidity, long cachedHighestModSeq)
+            throws MessagingException {
+        SelectOrExamineResponse response = internalOpen(mode, cachedUidValidity, cachedHighestModSeq);
+
+        if (messageCount == -1) {
+            throw new MessagingException("Did not find message count during open");
+        }
+        return response.getQresyncParamResponse();
+    }
+
+    SelectOrExamineResponse internalOpen(int mode, long cachedUidValidity, long cachedHighestModSeq)
+            throws MessagingException {
         if (isOpen() && this.mode == mode) {
             // Make sure the connection is valid. If it's not we'll close it down and continue
             // on to get a new one.
             try {
-                return executeSimpleCommand(Commands.NOOP);
+                return SelectOrExamineResponse.newInstance(executeSimpleCommand(Commands.NOOP), this);
             } catch (IOException ioe) {
                 /* don't throw */ ioExceptionHandler(connection, ioe);
             }
@@ -144,55 +157,44 @@ public class ImapFolder extends Folder<ImapMessage> {
         try {
             msgSeqUidMap.clear();
 
-            String openCommand = mode == OPEN_MODE_RW ? "SELECT" : "EXAMINE";
             String encodedFolderName = folderNameCodec.encode(getPrefixedName());
             String escapedFolderName = ImapUtility.encodeString(encodedFolderName);
-            String command = String.format("%s %s", openCommand, escapedFolderName);
-            List<ImapResponse> responses = executeSimpleCommand(command);
+            SelectOrExamineCommand command;
+            if (connection.isQresyncCapable() && ImapConfig.shouldUseQresync()) {
+                connection.enableQresync();
+                command = SelectOrExamineCommand.createWithQresyncParameter(mode, escapedFolderName, cachedUidValidity,
+                        cachedHighestModSeq);
+            } else if (connection.isCondstoreCapable() && ImapConfig.shouldUseCondstore()) {
+                command = SelectOrExamineCommand.createWithCondstoreParameter(mode, escapedFolderName);
+            } else {
+                command = SelectOrExamineCommand.create(mode, escapedFolderName);
+            }
+
+            SelectOrExamineResponse response = SelectOrExamineResponse.newInstance(
+                    executeSimpleCommand(command.createCommandString()), this);
 
             /*
              * If the command succeeds we expect the folder has been opened read-write unless we
              * are notified otherwise in the responses.
              */
-            this.mode = mode;
-
-            for (ImapResponse response : responses) {
-                handlePermanentFlags(response);
+            if (response == null) {
+                // This shouldn't happen
+                return null;
             }
-
-            handleSelectOrExamineOkResponse(getLastResponse(responses));
-
+            this.mode = mode;
+            if (response.hasOpenMode()) {
+                this.mode = response.getOpenMode();
+            }
             exists = true;
-
-            return responses;
+            uidValidity = response.getUidValidity();
+            highestModSeq = response.getHighestModSeq();
+            canCreateKeywords = response.canCreateKeywords();
+            return response;
         } catch (IOException ioe) {
             throw ioExceptionHandler(connection, ioe);
         } catch (MessagingException me) {
             Timber.e(me, "Unable to open connection for %s", getLogId());
             throw me;
-        }
-    }
-
-    private void handlePermanentFlags(ImapResponse response) {
-        PermanentFlagsResponse permanentFlagsResponse = PermanentFlagsResponse.parse(response);
-        if (permanentFlagsResponse == null) {
-            return;
-        }
-
-        Set<Flag> permanentFlags = store.getPermanentFlagsIndex();
-        permanentFlags.addAll(permanentFlagsResponse.getFlags());
-        canCreateKeywords = permanentFlagsResponse.canCreateKeywords();
-    }
-
-    private void handleSelectOrExamineOkResponse(ImapResponse response) {
-        SelectOrExamineResponse selectOrExamineResponse = SelectOrExamineResponse.parse(response);
-        if (selectOrExamineResponse == null) {
-            // This shouldn't happen
-            return;
-        }
-
-        if (selectOrExamineResponse.hasOpenMode()) {
-            mode = selectOrExamineResponse.getOpenMode();
         }
     }
 
@@ -425,6 +427,22 @@ public class ImapFolder extends Folder<ImapMessage> {
         return messageCount;
     }
 
+    public boolean supportsModSeq() throws MessagingException {
+        return !(highestModSeq == INVALID_HIGHEST_MOD_SEQ);
+    }
+
+    boolean doesConnectionSupportQresync() throws IOException, MessagingException {
+        return connection.isQresyncCapable();
+    }
+
+    public long getUidValidity() {
+        return uidValidity;
+    }
+
+    public long getHighestModSeq() {
+        return highestModSeq;
+    }
+
     private int getRemoteMessageCount(Set<Flag> requiredFlags, Set<Flag> forbiddenFlags) throws MessagingException {
         checkOpen();
 
@@ -436,7 +454,6 @@ public class ImapFolder extends Folder<ImapMessage> {
 
         UidSearchResponse searchResponse = searchCommand.execute(connection, this);
         return searchResponse.getNumbers().size();
-
     }
 
     @Override
@@ -499,6 +516,41 @@ public class ImapFolder extends Folder<ImapMessage> {
         return getMessages(start, end, earliestDate, false, listener);
     }
 
+    public void fetchChangedMessageFlagsUsingCondstore(List<ImapMessage> messages, long modseq,
+            MessageRetrievalListener<ImapMessage> listener) throws MessagingException {
+        if (messages == null || messages.isEmpty()) {
+            return;
+        }
+        checkOpen();
+
+        List<Long> uids = new ArrayList<>(messages.size());
+        HashMap<String, Message> messageMap = new HashMap<>();
+
+        for (ImapMessage message : messages) {
+            Long uid = Long.parseLong(message.getUid());
+            uids.add(uid);
+            messageMap.put(String.valueOf(uid), message);
+        }
+
+        FetchProfile fp = new FetchProfile();
+        fp.add(FetchProfile.Item.FLAGS);
+
+        for (int windowStart = 0; windowStart < messageMap.size(); windowStart += (FETCH_WINDOW_SIZE)) {
+            int windowEnd = Math.min(windowStart + FETCH_WINDOW_SIZE, messageMap.size());
+            Set<Long> uidWindow = new HashSet<>(uids.subList(windowStart, windowEnd));
+            int maximumAutoDownloadMessageSize = store.getStoreConfig()
+                    .getMaximumAutoDownloadMessageSize();
+
+            try {
+                UidFetchCommand command = UidFetchCommand.createWithMessageParams(uidWindow,
+                        maximumAutoDownloadMessageSize, messageMap, fp, modseq);
+                sendAndProcessUidFetchCommand(command, messageMap, listener);
+            } catch (IOException ioe) {
+                throw ioExceptionHandler(connection, ioe);
+            }
+        }
+    }
+
     protected List<ImapMessage> getMessages(final int start, final int end, Date earliestDate,
             final boolean includeDeleted, final MessageRetrievalListener<ImapMessage> listener)
             throws MessagingException {
@@ -514,6 +566,7 @@ public class ImapFolder extends Folder<ImapMessage> {
                 .since(earliestDate)
                 .forbiddenFlags(includeDeleted ? null : Collections.singleton(Flag.DELETED))
                 .build();
+                
         return getMessages(searchCommand.execute(connection, this), listener);
     }
 
@@ -641,76 +694,74 @@ public class ImapFolder extends Folder<ImapMessage> {
                     .getMaximumAutoDownloadMessageSize();
 
             try {
-
                 UidFetchCommand command = UidFetchCommand.createWithMessageParams(uidSet,
-                        maximumAutoDownloadMessageSize, messageMap, fetchProfile);
-
-                command.send(connection);
-
-                ImapResponse response;
-                int messageNumber = 0;
-
-                do {
-
-                    response = command.readResponse(connection);
-
-                    if (response.getTag() == null && ImapResponseParser.equalsIgnoreCase(response.get(1), "FETCH")) {
-                        ImapList fetchList = (ImapList) response.getKeyedValue("FETCH");
-                        String uid = fetchList.getKeyedString("UID");
-                        long msgSeq = response.getLong(0);
-                        if (uid != null) {
-                            try {
-                                msgSeqUidMap.put(msgSeq, uid);
-                                if (K9MailLib.isDebug()) {
-                                    Timber.v("Stored uid '%s' for msgSeq %d into map", uid, msgSeq);
-                                }
-                            } catch (Exception e) {
-                                Timber.e("Unable to store uid '%s' for msgSeq %d", uid, msgSeq);
-                            }
-                        }
-
-                        Message message = messageMap.get(uid);
-                        if (message == null) {
-                            if (K9MailLib.isDebug()) {
-                                Timber.d("Do not have message in messageMap for UID %s for %s", uid, getLogId());
-                            }
-
-                            handleUntaggedResponse(response);
-                            continue;
-                        }
-
-                        if (listener != null) {
-                            listener.messageStarted(uid, messageNumber++, messageMap.size());
-                        }
-
-                        ImapMessage imapMessage = (ImapMessage) message;
-                        Object literal = handleFetchResponse(imapMessage, fetchList);
-
-                        if (literal != null) {
-                            if (literal instanceof String) {
-                                String bodyString = (String) literal;
-                                InputStream bodyStream = new ByteArrayInputStream(bodyString.getBytes());
-                                imapMessage.parse(bodyStream);
-                            } else if (literal instanceof Integer) {
-                                // All the work was done in FetchBodyCallback.foundLiteral()
-                            } else {
-                                // This shouldn't happen
-                                throw new MessagingException("Got FETCH response with bogus parameters");
-                            }
-                        }
-
-                        if (listener != null) {
-                            listener.messageFinished(imapMessage, messageNumber, messageMap.size());
-                        }
-                    } else {
-                        handleUntaggedResponse(response);
-                    }
-
-                } while (response.getTag() == null);
+                        maximumAutoDownloadMessageSize, messageMap, fetchProfile, null);
+                sendAndProcessUidFetchCommand(command, messageMap, listener);
             } catch (IOException ioe) {
                 throw ioExceptionHandler(connection, ioe);
             }
         }
+    }
+
+    private void sendAndProcessUidFetchCommand(UidFetchCommand command, HashMap<String, Message> messageMap,
+            MessageRetrievalListener<ImapMessage> listener) throws MessagingException, IOException {
+        ImapResponse response;
+        int messageNumber = 0;
+
+        command.send(connection);
+
+        do {
+            response = command.readResponse(connection);
+
+            if (response.getTag() == null && ImapResponseParser.equalsIgnoreCase(response.get(1), "FETCH")) {
+                ImapList fetchList = (ImapList) response.getKeyedValue("FETCH");
+                String uid = fetchList.getKeyedString("UID");
+                long msgSeq = response.getLong(0);
+                if (uid != null) {
+                    msgSeqUidMap.put(msgSeq, uid);
+                    if (K9MailLib.isDebug()) {
+                        Timber.v("Stored uid '%s' for msgSeq %d into map", uid, msgSeq);
+                    }
+                }
+
+                Message message = messageMap.get(uid);
+                if (message == null) {
+                    if (K9MailLib.isDebug()) {
+                        Timber.d("Do not have message in messageMap for UID %s for %s", uid, getLogId());
+                    }
+
+                    handleUntaggedResponse(response);
+                    continue;
+                }
+
+                if (listener != null) {
+                    listener.messageStarted(uid, messageNumber, messageMap.size());
+                }
+
+                ImapMessage imapMessage = (ImapMessage) message;
+                Object literal = handleFetchResponse(imapMessage, fetchList);
+
+                if (literal != null) {
+                    if (literal instanceof String) {
+                        String bodyString = (String) literal;
+                        InputStream bodyStream = new ByteArrayInputStream(bodyString.getBytes());
+                        imapMessage.parse(bodyStream);
+                    } else if (literal instanceof Integer) {
+                        // All the work was done in FetchBodyCallback.foundLiteral()
+                    } else {
+                        // This shouldn't happen
+                        throw new MessagingException("Got FETCH response with bogus parameters");
+                    }
+                }
+
+                if (listener != null) {
+                    listener.messageFinished(imapMessage, messageNumber, messageMap.size());
+                }
+                messageNumber++;
+            } else {
+                handleUntaggedResponse(response);
+            }
+        } while (response.getTag() == null);
     }
 
     @Override
@@ -725,7 +776,6 @@ public class ImapFolder extends Folder<ImapMessage> {
         try {
             UidFetchCommand command = UidFetchCommand.createWithPartParams(uids,
                     maximumAutoDownloadMessageSize, part, bodyFactory);
-
             command.send(connection);
 
             ImapResponse response;
@@ -790,26 +840,9 @@ public class ImapFolder extends Folder<ImapMessage> {
     // Returns value of body field
     private Object handleFetchResponse(ImapMessage message, ImapList fetchList) throws MessagingException {
         Object result = null;
+
         if (fetchList.containsKey("FLAGS")) {
-            ImapList flags = fetchList.getKeyedList("FLAGS");
-            if (flags != null) {
-                for (int i = 0, count = flags.size(); i < count; i++) {
-                    String flag = flags.getString(i);
-                    if (flag.equalsIgnoreCase("\\Deleted")) {
-                        message.setFlagInternal(Flag.DELETED, true);
-                    } else if (flag.equalsIgnoreCase("\\Answered")) {
-                        message.setFlagInternal(Flag.ANSWERED, true);
-                    } else if (flag.equalsIgnoreCase("\\Seen")) {
-                        message.setFlagInternal(Flag.SEEN, true);
-                    } else if (flag.equalsIgnoreCase("\\Flagged")) {
-                        message.setFlagInternal(Flag.FLAGGED, true);
-                    } else if (flag.equalsIgnoreCase("$Forwarded")) {
-                        message.setFlagInternal(Flag.FORWARDED, true);
-                        /* a message contains FORWARDED FLAG -> so we can also create them */
-                        store.getPermanentFlagsIndex().add(Flag.FORWARDED);
-                    }
-                }
-            }
+            ImapUtility.setMessageFlags(fetchList, message, store);
         }
 
         if (fetchList.containsKey("INTERNALDATE")) {
@@ -903,6 +936,14 @@ public class ImapFolder extends Folder<ImapMessage> {
                 messageCount--;
                 if (K9MailLib.isDebug()) {
                     Timber.d("Got untagged EXPUNGE with messageCount %d for %s", messageCount, getLogId());
+                }
+            }
+
+            if (ImapResponseParser.equalsIgnoreCase(response.get(0), "VANISHED") && messageCount > 0) {
+                List<String> vanishedUids = ImapUtility.extractVanishedUids(Collections.singletonList(response));
+                messageCount -= vanishedUids.size();
+                if (K9MailLib.isDebug()) {
+                    Timber.d("Got untagged VANISHED with messageCount %d for %s", messageCount, getLogId());
                 }
             }
         }
@@ -1197,6 +1238,28 @@ public class ImapFolder extends Folder<ImapMessage> {
         }
     }
 
+    public List<String> expungeUsingQresync() throws MessagingException {
+        open(OPEN_MODE_RW);
+        checkOpen();
+
+        try {
+            List<ImapResponse> expungeResponses = executeSimpleCommand("EXPUNGE");
+            updateHighestModSeqFromResponses(expungeResponses);
+            return ImapUtility.extractVanishedUids(expungeResponses);
+        } catch (IOException ioe) {
+            throw ioExceptionHandler(connection, ioe);
+        }
+    }
+
+    private void updateHighestModSeqFromResponses(List<ImapResponse> imapResponses) {
+        for (ImapResponse imapResponse : imapResponses) {
+            Long highestModSeq = ImapUtility.extractHighestModSeq(imapResponse);
+            if (highestModSeq != null) {
+                this.highestModSeq = highestModSeq;
+            }
+        }
+    }
+
     @Override
     public void setFlags(Set<Flag> flags, boolean value) throws MessagingException {
         open(OPEN_MODE_RW);
@@ -1287,6 +1350,10 @@ public class ImapFolder extends Folder<ImapMessage> {
 
     private ImapStore getStore() {
         return store;
+    }
+
+    Set<Flag> getPermanentFlags() {
+        return getStore().getPermanentFlagsIndex();
     }
 
     protected String getLogId() {

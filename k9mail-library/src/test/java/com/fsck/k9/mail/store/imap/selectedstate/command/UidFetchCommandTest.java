@@ -106,7 +106,7 @@ public class UidFetchCommandTest {
         Map<String, Message> messageMap = Collections.singletonMap(String.valueOf(uid),
                 (Message) createImapMessage(String.valueOf(uid)));
         return UidFetchCommand.createWithMessageParams(Collections.singleton(uid),
-                maximumAutoDownloadMessageSize, messageMap, fetchProfile);
+                maximumAutoDownloadMessageSize, messageMap, fetchProfile, null);
     }
 
     private Part createPart(String serverExtra) {

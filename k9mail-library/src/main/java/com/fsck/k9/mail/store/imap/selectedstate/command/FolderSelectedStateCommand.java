@@ -17,7 +17,6 @@ import com.fsck.k9.mail.store.imap.selectedstate.response.SelectedStateResponse;
 
 
 abstract class FolderSelectedStateCommand {
-
     /* The below limits are 20 octets less than the recommended limits, in order to compensate for
     the length of the command tag, the space after the tag and the CRLF at the end of the command
     (these are not taken into account when calculating the length of the command). For more
@@ -29,7 +28,7 @@ abstract class FolderSelectedStateCommand {
      */
     private static final int LENGTH_LIMIT_WITHOUT_CONDSTORE = 980;
     private static final int LENGTH_LIMIT_WITH_CONDSTORE = 8172;
-
+  
     private Set<Long> idSet;
     private List<ContiguousIdGroup> idGroups;
 

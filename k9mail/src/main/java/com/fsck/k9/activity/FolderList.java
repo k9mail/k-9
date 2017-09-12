@@ -229,7 +229,7 @@ public class FolderList extends K9ListActivity {
                 wakeLock.release();
             }
         };
-        MessagingController.getInstance(getApplication()).synchronizeMailbox(mAccount, folder.name, listener, null);
+        MessagingController.getInstance(getApplication()).synchronizeMailbox(mAccount, folder.name, listener);
         sendMail(mAccount);
     }
 

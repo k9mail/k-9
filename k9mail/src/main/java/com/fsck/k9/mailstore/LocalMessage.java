@@ -10,11 +10,9 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.annotation.VisibleForTesting;
-import timber.log.Timber;
 
 import com.fsck.k9.Account;
 import com.fsck.k9.BuildConfig;
-import com.fsck.k9.K9;
 import com.fsck.k9.activity.MessageReference;
 import com.fsck.k9.mail.Address;
 import com.fsck.k9.mail.Flag;
@@ -25,6 +23,7 @@ import com.fsck.k9.mail.message.MessageHeaderParser;
 import com.fsck.k9.mailstore.LockableDatabase.DbCallback;
 import com.fsck.k9.mailstore.LockableDatabase.WrappedException;
 import com.fsck.k9.message.extractors.PreviewResult.PreviewType;
+import timber.log.Timber;
 
 
 public class LocalMessage extends MimeMessage {
@@ -65,23 +64,7 @@ public class LocalMessage extends MimeMessage {
             this.setFrom(from[0]);
         }
         this.setInternalSentDate(new Date(cursor.getLong(2)));
-        this.setUid(cursor.getString(3));
-        String flagList = cursor.getString(4);
-        if (flagList != null && flagList.length() > 0) {
-            String[] flags = flagList.split(",");
-
-            for (String flag : flags) {
-                try {
-                    this.setFlagInternal(Flag.valueOf(flag), true);
-                }
-
-                catch (Exception e) {
-                    if (!"X_BAD_FLAG".equals(flag)) {
-                        Timber.w("Unable to parse flag %s", flag);
-                    }
-                }
-            }
-        }
+        populateUidAndFlags(cursor);
         this.mId = cursor.getLong(5);
         this.setRecipients(RecipientType.TO, Address.unpack(cursor.getString(6)));
         this.setRecipients(RecipientType.CC, Address.unpack(cursor.getString(7)));
@@ -110,18 +93,6 @@ public class LocalMessage extends MimeMessage {
         mThreadId = (cursor.isNull(15)) ? -1 : cursor.getLong(15);
         mRootId = (cursor.isNull(16)) ? -1 : cursor.getLong(16);
 
-        boolean deleted = (cursor.getInt(17) == 1);
-        boolean read = (cursor.getInt(18) == 1);
-        boolean flagged = (cursor.getInt(19) == 1);
-        boolean answered = (cursor.getInt(20) == 1);
-        boolean forwarded = (cursor.getInt(21) == 1);
-
-        setFlagInternal(Flag.DELETED, deleted);
-        setFlagInternal(Flag.SEEN, read);
-        setFlagInternal(Flag.FLAGGED, flagged);
-        setFlagInternal(Flag.ANSWERED, answered);
-        setFlagInternal(Flag.FORWARDED, forwarded);
-
         setMessagePartId(cursor.getLong(22));
         mimeType = cursor.getString(23);
 
@@ -133,6 +104,40 @@ public class LocalMessage extends MimeMessage {
         }
         
         headerNeedsUpdating = false;
+    }
+
+    void populateUidAndFlags(Cursor cursor) throws MessagingException {
+        setUid(cursor.getString(cursor.getColumnIndex("uid")));
+        String flagList = cursor.getString(cursor.getColumnIndex("flags"));
+        if (flagList != null && flagList.length() > 0) {
+            String[] flags = flagList.split(",");
+
+            for (String flag : flags) {
+                if ("X_BAD_FLAG".equals(flag)) {
+                    continue;
+                }
+
+                try {
+                    setFlagInternal(Flag.valueOf(flag), true);
+                }
+
+                catch (Exception e) {
+                    Timber.w("Unable to parse flag %s", flag);
+                }
+            }
+        }
+
+        boolean deleted = (cursor.getInt(cursor.getColumnIndex("deleted")) == 1);
+        boolean read = (cursor.getInt(cursor.getColumnIndex("read")) == 1);
+        boolean flagged = (cursor.getInt(cursor.getColumnIndex("flagged")) == 1);
+        boolean answered = (cursor.getInt(cursor.getColumnIndex("answered")) == 1);
+        boolean forwarded = (cursor.getInt(cursor.getColumnIndex("forwarded")) == 1);
+
+        setFlagInternal(Flag.DELETED, deleted);
+        setFlagInternal(Flag.SEEN, read);
+        setFlagInternal(Flag.FLAGGED, flagged);
+        setFlagInternal(Flag.ANSWERED, answered);
+        setFlagInternal(Flag.FORWARDED, forwarded);
     }
 
     @VisibleForTesting

@@ -4,7 +4,6 @@ package com.fsck.k9.controller;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,17 +45,16 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowApplication;
 import org.robolectric.shadows.ShadowLog;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anySet;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
@@ -72,13 +70,13 @@ import static org.mockito.Mockito.when;
 @SuppressWarnings("unchecked")
 @RunWith(K9RobolectricTestRunner.class)
 public class MessagingControllerTest {
+
     private static final String FOLDER_NAME = "Folder";
     private static final String SENT_FOLDER_NAME = "Sent";
     private static final int MAXIMUM_SMALL_MESSAGE_SIZE = 1000;
-    private static final String MESSAGE_UID1 = "message-uid1";
-
 
     private MessagingController controller;
+
     @Mock
     private Contacts contacts;
     @Mock
@@ -108,8 +106,6 @@ public class MessagingControllerTest {
     @Mock
     private Transport transport;
     @Captor
-    private ArgumentCaptor<List<Message>> messageListCaptor;
-    @Captor
     private ArgumentCaptor<List<LocalFolder>> localFolderListCaptor;
     @Captor
     private ArgumentCaptor<FetchProfile> fetchProfileCaptor;
@@ -134,7 +130,6 @@ public class MessagingControllerTest {
     @Mock
     private LocalMessage localMessageToSend1;
     private volatile boolean hasFetchedMessage = false;
-
 
     @Before
     public void setUp() throws MessagingException {
@@ -425,7 +420,7 @@ public class MessagingControllerTest {
                  return null;
              }
         }).when(remoteFolder).fetch(
-            Matchers.<List<Message>>eq(Collections.singletonList(remoteNewMessage2)),
+            Matchers.eq(Collections.singletonList(remoteNewMessage2)),
             any(FetchProfile.class),
             Matchers.<MessageRetrievalListener>eq(null));
         reqFlags = Collections.singleton(Flag.ANSWERED);
@@ -625,232 +620,6 @@ public class MessagingControllerTest {
         verify(listener).sendPendingMessagesCompleted(account);
     }
 
-
-    @Test
-    public void synchronizeMailboxSynchronous_withOneMessageInRemoteFolder_shouldFinishWithoutError()
-            throws Exception {
-        messageCountInRemoteFolder(1);
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, remoteFolder);
-
-        verify(listener).synchronizeMailboxFinished(account, FOLDER_NAME, 1, 0);
-    }
-
-    @Test
-    public void synchronizeMailboxSynchronous_withEmptyRemoteFolder_shouldFinishWithoutError()
-            throws Exception {
-        messageCountInRemoteFolder(0);
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, remoteFolder);
-
-        verify(listener).synchronizeMailboxFinished(account, FOLDER_NAME, 0, 0);
-    }
-
-    @Test
-    public void synchronizeMailboxSynchronous_withNegativeMessageCountInRemoteFolder_shouldFinishWithError()
-            throws Exception {
-        messageCountInRemoteFolder(-1);
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, remoteFolder);
-
-        verify(listener).synchronizeMailboxFailed(account, FOLDER_NAME,
-                "Exception: Message count -1 for folder Folder");
-    }
-
-    @Test
-    public void synchronizeMailboxSynchronous_withRemoteFolderProvided_shouldNotOpenRemoteFolder() throws Exception {
-        messageCountInRemoteFolder(1);
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, remoteFolder);
-
-        verify(remoteFolder, never()).open(Folder.OPEN_MODE_RW);
-    }
-
-    @Test
-    public void synchronizeMailboxSynchronous_withNoRemoteFolderProvided_shouldOpenRemoteFolderFromStore()
-            throws Exception {
-        messageCountInRemoteFolder(1);
-        configureRemoteStoreWithFolder();
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, null);
-
-        verify(remoteFolder).open(Folder.OPEN_MODE_RW);
-    }
-
-    @Test
-    public void synchronizeMailboxSynchronous_withRemoteFolderProvided_shouldNotCloseRemoteFolder() throws Exception {
-        messageCountInRemoteFolder(1);
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, remoteFolder);
-
-        verify(remoteFolder, never()).close();
-    }
-
-    @Test
-    public void synchronizeMailboxSynchronous_withNoRemoteFolderProvided_shouldCloseRemoteFolderFromStore()
-            throws Exception {
-        messageCountInRemoteFolder(1);
-        configureRemoteStoreWithFolder();
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, null);
-
-        verify(remoteFolder).close();
-    }
-
-    @Test
-    public void synchronizeMailboxSynchronous_withAccountPolicySetToExpungeOnPoll_shouldExpungeRemoteFolder()
-            throws Exception {
-        messageCountInRemoteFolder(1);
-        when(account.getExpungePolicy()).thenReturn(Account.Expunge.EXPUNGE_ON_POLL);
-        configureRemoteStoreWithFolder();
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, null);
-
-        verify(remoteFolder).expunge();
-    }
-
-    @Test
-    public void synchronizeMailboxSynchronous_withAccountPolicySetToExpungeManually_shouldNotExpungeRemoteFolder()
-            throws Exception {
-        messageCountInRemoteFolder(1);
-        when(account.getExpungePolicy()).thenReturn(Account.Expunge.EXPUNGE_MANUALLY);
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, null);
-
-        verify(remoteFolder, never()).expunge();
-    }
-
-    @Test
-    public void synchronizeMailboxSynchronous_withAccountSetToSyncRemoteDeletions_shouldDeleteLocalCopiesOfDeletedMessages()
-            throws Exception {
-        messageCountInRemoteFolder(0);
-        LocalMessage localCopyOfRemoteDeletedMessage = mock(LocalMessage.class);
-        when(account.syncRemoteDeletions()).thenReturn(true);
-        when(localFolder.getAllMessagesAndEffectiveDates()).thenReturn(Collections.singletonMap(MESSAGE_UID1, 0L));
-        when(localFolder.getMessagesByUids(any(List.class)))
-                .thenReturn(Collections.singletonList(localCopyOfRemoteDeletedMessage));
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, remoteFolder);
-
-        verify(localFolder).destroyMessages(messageListCaptor.capture());
-        assertEquals(localCopyOfRemoteDeletedMessage, messageListCaptor.getValue().get(0));
-    }
-
-    @Test
-    public void synchronizeMailboxSynchronous_withAccountSetToSyncRemoteDeletions_shouldNotDeleteLocalCopiesOfExistingMessagesAfterEarliestPollDate()
-            throws Exception {
-        messageCountInRemoteFolder(1);
-        Date dateOfEarliestPoll = new Date();
-        LocalMessage localMessage = localMessageWithCopyOnServer();
-        when(account.syncRemoteDeletions()).thenReturn(true);
-        when(account.getEarliestPollDate()).thenReturn(dateOfEarliestPoll);
-        when(localMessage.olderThan(dateOfEarliestPoll)).thenReturn(false);
-        when(localFolder.getMessages(null)).thenReturn(Collections.singletonList(localMessage));
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, remoteFolder);
-
-        verify(localFolder, never()).destroyMessages(messageListCaptor.capture());
-    }
-
-    @Test
-    public void synchronizeMailboxSynchronous_withAccountSetToSyncRemoteDeletions_shouldDeleteLocalCopiesOfExistingMessagesBeforeEarliestPollDate()
-            throws Exception {
-        messageCountInRemoteFolder(1);
-        LocalMessage localMessage = localMessageWithCopyOnServer();
-        Date dateOfEarliestPoll = new Date();
-        when(account.syncRemoteDeletions()).thenReturn(true);
-        when(account.getEarliestPollDate()).thenReturn(dateOfEarliestPoll);
-        when(localMessage.olderThan(dateOfEarliestPoll)).thenReturn(true);
-        when(localFolder.getAllMessagesAndEffectiveDates()).thenReturn(Collections.singletonMap(MESSAGE_UID1, 0L));
-        when(localFolder.getMessagesByUids(any(List.class))).thenReturn(Collections.singletonList(localMessage));
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, remoteFolder);
-
-        verify(localFolder).destroyMessages(messageListCaptor.capture());
-        assertEquals(localMessage, messageListCaptor.getValue().get(0));
-    }
-
-    @Test
-    public void synchronizeMailboxSynchronous_withAccountSetNotToSyncRemoteDeletions_shouldNotDeleteLocalCopiesOfMessages()
-            throws Exception {
-        messageCountInRemoteFolder(0);
-        LocalMessage remoteDeletedMessage = mock(LocalMessage.class);
-        when(account.syncRemoteDeletions()).thenReturn(false);
-        when(localFolder.getMessages(null)).thenReturn(Collections.singletonList(remoteDeletedMessage));
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, remoteFolder);
-
-        verify(localFolder, never()).destroyMessages(messageListCaptor.capture());
-    }
-
-    @Test
-    public void synchronizeMailboxSynchronous_withAccountSupportingFetchingFlags_shouldFetchUnsychronizedMessagesListAndFlags()
-            throws Exception {
-        messageCountInRemoteFolder(1);
-        hasUnsyncedRemoteMessage();
-        when(remoteFolder.supportsFetchingFlags()).thenReturn(true);
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, remoteFolder);
-
-        verify(remoteFolder, atLeastOnce()).fetch(any(List.class), fetchProfileCaptor.capture(),
-                any(MessageRetrievalListener.class));
-        assertTrue(fetchProfileCaptor.getAllValues().get(0).contains(FetchProfile.Item.FLAGS));
-        assertTrue(fetchProfileCaptor.getAllValues().get(0).contains(FetchProfile.Item.ENVELOPE));
-        assertEquals(2, fetchProfileCaptor.getAllValues().get(0).size());
-    }
-
-    @Test
-    public void synchronizeMailboxSynchronous_withAccountNotSupportingFetchingFlags_shouldFetchUnsychronizedMessages()
-            throws Exception {
-        messageCountInRemoteFolder(1);
-        hasUnsyncedRemoteMessage();
-        when(remoteFolder.supportsFetchingFlags()).thenReturn(false);
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, remoteFolder);
-
-        verify(remoteFolder, atLeastOnce()).fetch(any(List.class), fetchProfileCaptor.capture(),
-                any(MessageRetrievalListener.class));
-        assertEquals(1, fetchProfileCaptor.getAllValues().get(0).size());
-        assertTrue(fetchProfileCaptor.getAllValues().get(0).contains(FetchProfile.Item.ENVELOPE));
-    }
-
-    @Test
-    public void synchronizeMailboxSynchronous_withUnsyncedNewSmallMessage_shouldFetchBodyOfSmallMessage()
-            throws Exception {
-        Message smallMessage = buildSmallNewMessage();
-        messageCountInRemoteFolder(1);
-        hasUnsyncedRemoteMessage();
-        when(remoteFolder.supportsFetchingFlags()).thenReturn(false);
-        respondToFetchEnvelopesWithMessage(smallMessage);
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, remoteFolder);
-
-        verify(remoteFolder, atLeast(2)).fetch(any(List.class), fetchProfileCaptor.capture(),
-                any(MessageRetrievalListener.class));
-        assertEquals(1, fetchProfileCaptor.getAllValues().get(1).size());
-        assertTrue(fetchProfileCaptor.getAllValues().get(1).contains(FetchProfile.Item.BODY));
-    }
-
-    @Test
-    public void synchronizeMailboxSynchronous_withUnsyncedNewSmallMessage_shouldFetchStructureAndLimitedBodyOfLargeMessage()
-            throws Exception {
-        Message largeMessage = buildLargeNewMessage();
-        messageCountInRemoteFolder(1);
-        hasUnsyncedRemoteMessage();
-        when(remoteFolder.supportsFetchingFlags()).thenReturn(false);
-        respondToFetchEnvelopesWithMessage(largeMessage);
-
-        controller.synchronizeMailboxSynchronous(account, FOLDER_NAME, listener, remoteFolder);
-
-        //TODO: Don't bother fetching messages of a size we don't have
-        verify(remoteFolder, atLeast(4)).fetch(any(List.class), fetchProfileCaptor.capture(),
-                any(MessageRetrievalListener.class));
-        assertEquals(1, fetchProfileCaptor.getAllValues().get(2).size());
-        assertEquals(FetchProfile.Item.STRUCTURE, fetchProfileCaptor.getAllValues().get(2).get(0));
-        assertEquals(1, fetchProfileCaptor.getAllValues().get(3).size());
-        assertEquals(FetchProfile.Item.BODY_SANE, fetchProfileCaptor.getAllValues().get(3).get(0));
-    }
-
     private void setupAccountWithMessageToSend() throws MessagingException {
         when(account.getOutboxFolderName()).thenReturn(FOLDER_NAME);
         when(account.hasSentFolder()).thenReturn(true);
@@ -863,62 +632,6 @@ public class MessagingControllerTest {
         when(localMessageToSend1.getUid()).thenReturn("localMessageToSend1");
         when(localMessageToSend1.getHeader(K9.IDENTITY_HEADER)).thenReturn(new String[]{});
         controller.addListener(listener);
-    }
-
-    private void respondToFetchEnvelopesWithMessage(final Message message) throws MessagingException {
-        doAnswer(new Answer() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                FetchProfile fetchProfile = (FetchProfile) invocation.getArguments()[1];
-                if (invocation.getArguments()[2] != null) {
-                    MessageRetrievalListener listener = (MessageRetrievalListener) invocation.getArguments()[2];
-                    if (fetchProfile.contains(FetchProfile.Item.ENVELOPE)) {
-                        listener.messageStarted("UID", 1, 1);
-                        listener.messageFinished(message, 1, 1);
-                        listener.messagesFinished(1);
-                    }
-                }
-                return null;
-            }
-        }).when(remoteFolder).fetch(any(List.class), any(FetchProfile.class), any(MessageRetrievalListener.class));
-    }
-
-    private Message buildSmallNewMessage() {
-        Message message = mock(Message.class);
-        when(message.olderThan(any(Date.class))).thenReturn(false);
-        when(message.getSize()).thenReturn((long) MAXIMUM_SMALL_MESSAGE_SIZE);
-        return message;
-    }
-
-    private Message buildLargeNewMessage() {
-        Message message = mock(Message.class);
-        when(message.olderThan(any(Date.class))).thenReturn(false);
-        when(message.getSize()).thenReturn((long) (MAXIMUM_SMALL_MESSAGE_SIZE + 1));
-        return message;
-    }
-
-    private void messageCountInRemoteFolder(int value) throws MessagingException {
-        when(remoteFolder.getMessageCount()).thenReturn(value);
-    }
-
-    private LocalMessage localMessageWithCopyOnServer() throws MessagingException {
-        String messageUid = "UID";
-        Message remoteMessage = mock(Message.class);
-        LocalMessage localMessage = mock(LocalMessage.class);
-
-        when(remoteMessage.getUid()).thenReturn(messageUid);
-        when(localMessage.getUid()).thenReturn(messageUid);
-        when(remoteFolder.getMessages(anyInt(), anyInt(), any(Date.class), any(MessageRetrievalListener.class)))
-                .thenReturn(Collections.singletonList(remoteMessage));
-        return localMessage;
-    }
-
-    private void hasUnsyncedRemoteMessage() throws MessagingException {
-        String messageUid = "UID";
-        Message remoteMessage = mock(Message.class);
-        when(remoteMessage.getUid()).thenReturn(messageUid);
-        when(remoteFolder.getMessages(anyInt(), anyInt(), any(Date.class), any(MessageRetrievalListener.class)))
-                .thenReturn(Collections.singletonList(remoteMessage));
     }
 
     private void configureAccount() throws MessagingException {

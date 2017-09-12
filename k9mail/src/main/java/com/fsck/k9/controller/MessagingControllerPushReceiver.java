@@ -1,21 +1,20 @@
 package com.fsck.k9.controller;
 
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+
 import android.content.Context;
-import timber.log.Timber;
 
 import com.fsck.k9.Account;
 import com.fsck.k9.K9;
-import com.fsck.k9.mail.power.TracingPowerManager.TracingWakeLock;
 import com.fsck.k9.mail.Folder;
-
 import com.fsck.k9.mail.Message;
 import com.fsck.k9.mail.PushReceiver;
+import com.fsck.k9.mail.power.TracingPowerManager.TracingWakeLock;
 import com.fsck.k9.mailstore.LocalFolder;
 import com.fsck.k9.mailstore.LocalStore;
 import com.fsck.k9.service.SleepService;
-
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
+import timber.log.Timber;
 
 public class MessagingControllerPushReceiver implements PushReceiver {
     final Account account;
@@ -28,17 +27,22 @@ public class MessagingControllerPushReceiver implements PushReceiver {
         this.context = context;
     }
 
-    public void messagesFlagsChanged(Folder folder,
-                                     List<Message> messages) {
-        controller.messagesArrived(account, folder, messages, true);
-    }
-    public void messagesArrived(Folder folder, List<Message> messages) {
-        controller.messagesArrived(account, folder, messages, false);
-    }
-    public void messagesRemoved(Folder folder, List<Message> messages) {
-        controller.messagesArrived(account, folder, messages, true);
+    @Override
+    public void messagesFlagsChanged(Folder folder, List<Message> messages) {
+        controller.synchronizeMailbox(account, folder.getName(), null);
     }
 
+    @Override
+    public void messagesArrived(Folder folder, List<Message> messages) {
+        controller.synchronizeMailbox(account, folder.getName(), null);
+    }
+
+    @Override
+    public void messagesRemoved(Folder folder, List<Message> messages) {
+        controller.synchronizeMailbox(account, folder.getName(), null);
+    }
+
+    @Override
     public void syncFolder(Folder folder) {
         Timber.v("syncFolder(%s)", folder.getName());
 
@@ -55,7 +59,7 @@ public class MessagingControllerPushReceiver implements PushReceiver {
             String message) {
                 latch.countDown();
             }
-        }, folder);
+        });
 
         Timber.v("syncFolder(%s) about to await latch release", folder.getName());
 
@@ -72,6 +76,7 @@ public class MessagingControllerPushReceiver implements PushReceiver {
         SleepService.sleep(context, millis, wakeLock, K9.PUSH_WAKE_LOCK_TIMEOUT);
     }
 
+    @Override
     public void pushError(String errorMessage, Exception e) {
         String errMess = errorMessage;
 
@@ -87,6 +92,7 @@ public class MessagingControllerPushReceiver implements PushReceiver {
         controller.handleAuthenticationFailure(account, true);
     }
 
+    @Override
     public String getPushState(String folderName) {
         LocalFolder localFolder = null;
         try {

@@ -501,7 +501,7 @@ public class AccountSetupCheckSettings extends K9Activity implements OnClickList
             }
             MessagingController.getInstance(getApplication()).listFoldersSynchronous(account, true, null);
             MessagingController.getInstance(getApplication())
-                    .synchronizeMailbox(account, account.getInboxFolderName(), null, null);
+                    .synchronizeMailbox(account, account.getInboxFolderName(), null);
         }
 
         @Override

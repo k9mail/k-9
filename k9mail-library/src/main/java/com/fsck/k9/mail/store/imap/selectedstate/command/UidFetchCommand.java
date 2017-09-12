@@ -28,6 +28,7 @@ public class UidFetchCommand extends FolderSelectedStateCommand {
     private FetchProfile fetchProfile;
     private Part part;
     private BodyFactory bodyFactory;
+    private Long changedSince;
 
     private UidFetchCommand(Set<Long> uids, int maximumAutoDownloadMessageSize) {
         super(uids);
@@ -39,6 +40,9 @@ public class UidFetchCommand extends FolderSelectedStateCommand {
         StringBuilder builder = new StringBuilder(Commands.UID_FETCH).append(" ");
         builder.append(createCombinedIdString());
         addDataItems(builder);
+        if (changedSince != null) {
+            builder.append(String.format("(CHANGEDSINCE %s) ", String.valueOf(changedSince)));
+        }
         return builder.toString().trim();
     }
 
@@ -95,7 +99,7 @@ public class UidFetchCommand extends FolderSelectedStateCommand {
             }
 
             String spaceSeparatedFetchFields = ImapUtility.join(" ", fetchFields);
-            builder.append("(").append(spaceSeparatedFetchFields).append(")");
+            builder.append("(").append(spaceSeparatedFetchFields).append(") ");
         } else if (part != null) {
             String partId = part.getServerExtra();
 
@@ -113,10 +117,12 @@ public class UidFetchCommand extends FolderSelectedStateCommand {
     public static UidFetchCommand createWithMessageParams(Set<Long> uids,
                                                           int maximumAutoDownloadMessageSize,
                                                           Map<String, Message> messageMap,
-                                                          FetchProfile fetchProfile) {
+                                                          FetchProfile fetchProfile,
+                                                          Long changedSince) {
         UidFetchCommand command = new UidFetchCommand(uids, maximumAutoDownloadMessageSize);
         command.messageMap = messageMap;
         command.fetchProfile = fetchProfile;
+        command.changedSince = changedSince;
         return command;
     }
 

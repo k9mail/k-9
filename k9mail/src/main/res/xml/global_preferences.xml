@@ -401,6 +401,18 @@
             android:title="@string/debug_enable_sensitive_logging_title"
             android:summary="@string/debug_enable_sensitive_logging_summary" />
 
+        <CheckBoxPreference
+            android:key="condstore_extension"
+            android:persistent="false"
+            android:summary="@string/debug_do_not_use_condstore_extension_summary"
+            android:title="@string/debug_do_not_use_condstore_extension_title" />
+
+        <CheckBoxPreference
+            android:key="qresync_extension"
+            android:persistent="false"
+            android:summary="@string/debug_do_not_use_qresync_extension_summary"
+            android:title="@string/debug_do_not_use_qresync_extension_title" />
+
     </PreferenceScreen>
 
     <PreferenceScreen

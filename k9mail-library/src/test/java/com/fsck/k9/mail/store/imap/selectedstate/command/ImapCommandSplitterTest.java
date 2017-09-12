@@ -1,9 +1,11 @@
 package com.fsck.k9.mail.store.imap.selectedstate.command;
 
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import com.fsck.k9.mail.store.imap.selectedstate.command.FolderSelectedStateCommand.ContiguousIdGroup;
 import org.junit.Test;

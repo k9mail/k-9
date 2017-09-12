@@ -136,6 +136,10 @@ public class ImapStore extends RemoteStore {
         return combinedPrefix;
     }
 
+    public static boolean isStoreUriImap(String storeUri) {
+        return storeUri.startsWith("imap");
+    }
+
     @Override
     public List<ImapFolder> getPersonalNamespaces(boolean forceListAll) throws MessagingException {
         ImapConnection connection = getConnection();

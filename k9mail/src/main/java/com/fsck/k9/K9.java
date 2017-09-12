@@ -37,6 +37,7 @@ import com.fsck.k9.mail.K9MailLib;
 import com.fsck.k9.mail.Message;
 import com.fsck.k9.mail.internet.BinaryTempFileBody;
 import com.fsck.k9.mail.ssl.LocalKeyStore;
+import com.fsck.k9.mail.store.imap.ImapConfig;
 import com.fsck.k9.mailstore.LocalStore;
 import com.fsck.k9.power.DeviceIdleManager;
 import com.fsck.k9.preferences.Storage;
@@ -165,6 +166,8 @@ public class K9 extends Application {
      */
     private static SharedPreferences sDatabaseVersionCache;
 
+    private static boolean useCondstore = true;
+    private static boolean useQresync = true;
     private static boolean mAnimations = true;
 
     private static boolean mConfirmDelete = false;
@@ -456,6 +459,8 @@ public class K9 extends Application {
         editor.putBoolean("enableDebugLogging", K9.DEBUG);
         editor.putBoolean("enableSensitiveLogging", K9.DEBUG_SENSITIVE);
         editor.putString("backgroundOperations", K9.backgroundOps.name());
+        editor.putBoolean("useCondstore", useCondstore);
+        editor.putBoolean("useQresync", useQresync);
         editor.putBoolean("animations", mAnimations);
         editor.putBoolean("gesturesEnabled", mGesturesEnabled);
         editor.putBoolean("useVolumeKeysForNavigation", mUseVolumeKeysForNavigation);
@@ -545,6 +550,19 @@ public class K9 extends Application {
 
             @Override public boolean debugSensitive() {
                 return DEBUG_SENSITIVE;
+            }
+        });
+
+        ImapConfig.setExtensionStatus(new ImapConfig.ExtensionStatus() {
+
+            @Override
+            public boolean useCondstore() {
+                return useCondstore;
+            }
+
+            @Override
+            public boolean useQresync() {
+                return useQresync;
             }
         });
 
@@ -688,6 +706,8 @@ public class K9 extends Application {
         Storage storage = prefs.getStorage();
         setDebug(storage.getBoolean("enableDebugLogging", BuildConfig.DEVELOPER_MODE));
         DEBUG_SENSITIVE = storage.getBoolean("enableSensitiveLogging", false);
+        useCondstore = storage.getBoolean("useCondstore", true);
+        useQresync = storage.getBoolean("useQresync", true);
         mAnimations = storage.getBoolean("animations", true);
         mGesturesEnabled = storage.getBoolean("gesturesEnabled", false);
         mUseVolumeKeysForNavigation = storage.getBoolean("useVolumeKeysForNavigation", false);
@@ -1046,6 +1066,22 @@ public class K9 extends Application {
 
     public static void setStartIntegratedInbox(boolean startIntegratedInbox) {
         mStartIntegratedInbox = startIntegratedInbox;
+    }
+
+    public static boolean shouldUseCondstore() {
+        return useCondstore;
+    }
+
+    public static void setUseCondstore(boolean useCondstore) {
+        K9.useCondstore = useCondstore;
+    }
+
+    public static boolean shouldUseQresync() {
+        return useQresync;
+    }
+
+    public static void setUseQresync(boolean useQresync) {
+        K9.useQresync = useQresync;
     }
 
     public static boolean showAnimations() {

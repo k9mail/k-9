@@ -80,7 +80,7 @@ class PermanentFlagsResponse {
         return flags;
     }
 
-    public boolean canCreateKeywords() {
+    boolean canCreateKeywords() {
         return canCreateKeywords;
     }
 }
