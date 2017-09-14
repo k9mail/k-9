@@ -2,6 +2,7 @@ package com.fsck.k9.mail.store.imap;
 
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -74,6 +75,7 @@ public class ImapFolderTest {
         when(imapStore.getStoreConfig()).thenReturn(storeConfig);
 
         imapConnection = mock(ImapConnection.class);
+        when(imapConnection.getOutputStream()).thenReturn(mock(OutputStream.class));
     }
 
     @Test
@@ -974,16 +976,35 @@ public class ImapFolderTest {
     }
 
     @Test
-    public void appendMessages_shouldIssueRespectiveCommand() throws Exception {
+    public void appendMessages_withoutMultiappend_shouldIssueRespectiveCommand() throws Exception {
         ImapFolder folder = createFolder("Folder");
         prepareImapFolderForOpen(OPEN_MODE_RW);
         folder.open(OPEN_MODE_RW);
         List<ImapMessage> messages = createImapMessages("1");
-        when(imapConnection.readResponse()).thenReturn(createImapResponse("x OK [APPENDUID 1 23]"));
+        when(imapConnection.isMultiappendCapable()).thenReturn(false);
+        when(imapConnection.readResponse()).thenReturn(createImapResponse("+ OK"))
+                .thenReturn(createImapResponse("x OK [APPENDUID 1 23]"));
 
         folder.appendMessages(messages);
 
         verify(imapConnection).sendCommand("APPEND \"Folder\" () {0}", false);
+    }
+
+    @Test
+    public void appendMessages_withMultiappend_shouldIssueRespectiveCommandAndContinuation() throws Exception {
+        ImapFolder folder = createFolder("Folder");
+        prepareImapFolderForOpen(OPEN_MODE_RW);
+        folder.open(OPEN_MODE_RW);
+        List<ImapMessage> messages = createImapMessages("1", "2");
+        when(imapConnection.isMultiappendCapable()).thenReturn(true);
+        when(imapConnection.readResponse()).thenReturn(createImapResponse("+ OK"))
+                .thenReturn(createImapResponse("+ OK"))
+                .thenReturn(createImapResponse("x OK [APPENDUID 1 23:24]"));
+
+        folder.appendMessages(messages);
+
+        verify(imapConnection).sendCommand("APPEND \"Folder\" () {0}", false);
+        verify(imapConnection).sendContinuation("() {0}");
     }
 
     @Test

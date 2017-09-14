@@ -177,7 +177,7 @@ public class LocalStore extends Store {
      */
     private static final int THREAD_FLAG_UPDATE_BATCH_SIZE = 500;
 
-    public static final int DB_VERSION = 60;
+    public static final int DB_VERSION = 61;
 
     private final Context context;
     private final ContentResolver contentResolver;

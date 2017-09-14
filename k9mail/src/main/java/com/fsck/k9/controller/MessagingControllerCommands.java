@@ -22,7 +22,7 @@ public class MessagingControllerCommands {
         public long databaseId;
 
 
-        PendingCommand() { }
+        protected PendingCommand() { }
 
         public abstract String getCommandName();
         public abstract void execute(MessagingController controller, Account account) throws MessagingException;
@@ -112,16 +112,16 @@ public class MessagingControllerCommands {
 
     public static class PendingAppend extends PendingCommand {
         public final String folder;
-        public final String uid;
+        final List<String> uids;
 
 
-        public static PendingAppend create(String folderName, String uid) {
-            return new PendingAppend(folderName, uid);
+        public static PendingAppend create(String folderName, List<String> uids) {
+            return new PendingAppend(folderName, uids);
         }
 
-        private PendingAppend(String folder, String uid) {
+        private PendingAppend(String folder, List<String> uids) {
             this.folder = folder;
-            this.uid = uid;
+            this.uids = uids;
         }
 
         @Override

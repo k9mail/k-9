@@ -12,7 +12,7 @@ import java.util.Set;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
-import com.fsck.k9.controller.MessagingControllerCommands.PendingAppend;
+import com.fsck.k9.mailstore.migrations.MigrationTo61.V60PendingAppend;
 import com.fsck.k9.controller.MessagingControllerCommands.PendingCommand;
 import com.fsck.k9.controller.MessagingControllerCommands.PendingEmptyTrash;
 import com.fsck.k9.controller.MessagingControllerCommands.PendingExpunge;
@@ -185,7 +185,7 @@ public class MigrationTo60Test {
     public void migrateAppend() {
         OldPendingCommand command = queueAppend(SOURCE_FOLDER, UID);
 
-        PendingAppend pendingCommand = (PendingAppend) MigrationTo60.migratePendingCommand(command);
+        V60PendingAppend pendingCommand = (V60PendingAppend) MigrationTo60.migratePendingCommand(command);
 
         assertEquals(SOURCE_FOLDER, pendingCommand.folder);
         assertEquals(UID, pendingCommand.uid);

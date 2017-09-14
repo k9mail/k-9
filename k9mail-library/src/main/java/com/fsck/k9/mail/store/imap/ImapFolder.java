@@ -48,6 +48,7 @@ class ImapFolder extends Folder<ImapMessage> {
     };
     private static final int MORE_MESSAGES_WINDOW_SIZE = 500;
     private static final int FETCH_WINDOW_SIZE = 100;
+    private static final long APPEND_WINDOW_SIZE = 10000000;
 
 
     protected volatile int messageCount = -1;
@@ -1143,73 +1144,20 @@ class ImapFolder extends Folder<ImapMessage> {
      */
     @Override
     public Map<String, String> appendMessages(List<? extends Message> messages) throws MessagingException {
+        if (messages == null || messages.size() == 0) {
+            return null;
+        }
+
         open(OPEN_MODE_RW);
         checkOpen();
 
         try {
             Map<String, String> uidMap = new HashMap<>();
-            for (Message message : messages) {
-                long messageSize = message.calculateSize();
 
-                String encodeFolderName = folderNameCodec.encode(getPrefixedName());
-                String escapedFolderName = ImapUtility.encodeString(encodeFolderName);
-                String command = String.format(Locale.US, "APPEND %s (%s) {%d}", escapedFolderName,
-                        combineFlags(message.getFlags()), messageSize);
-                connection.sendCommand(command, false);
-
-                ImapResponse response;
-                do {
-                    response = connection.readResponse();
-
-                    handleUntaggedResponse(response);
-
-                    if (response.isContinuationRequested()) {
-                        EOLConvertingOutputStream eolOut = new EOLConvertingOutputStream(connection.getOutputStream());
-                        message.writeTo(eolOut);
-                        eolOut.write('\r');
-                        eolOut.write('\n');
-                        eolOut.flush();
-                    }
-                } while (response.getTag() == null);
-
-                if (response.size() > 1) {
-                    /*
-                     * If the server supports UIDPLUS, then along with the APPEND response it
-                     * will return an APPENDUID response code, e.g.
-                     *
-                     * 11 OK [APPENDUID 2 238268] APPEND completed
-                     *
-                     * We can use the UID included in this response to update our records.
-                     */
-                    Object responseList = response.get(1);
-
-                    if (responseList instanceof ImapList) {
-                        ImapList appendList = (ImapList) responseList;
-                        if (appendList.size() >= 3 && appendList.getString(0).equals("APPENDUID")) {
-                            String newUid = appendList.getString(2);
-
-                            if (!TextUtils.isEmpty(newUid)) {
-                                message.setUid(newUid);
-                                uidMap.put(message.getUid(), newUid);
-                                continue;
-                            }
-                        }
-                    }
-                }
-
-                /*
-                 * This part is executed in case the server does not support UIDPLUS or does
-                 * not implement the APPENDUID response code.
-                 */
-                String newUid = getUidFromMessageId(message);
-                if (K9MailLib.isDebug()) {
-                    Timber.d("Got UID %s for message for %s", newUid, getLogId());
-                }
-
-                if (!TextUtils.isEmpty(newUid)) {
-                    uidMap.put(message.getUid(), newUid);
-                    message.setUid(newUid);
-                }
+            if (connection.isMultiappendCapable() && messages.size() > 1) {
+                appendWithMultiappend(messages, uidMap);
+            } else {
+                appendWithoutMultiappend(messages, uidMap);
             }
 
             /*
@@ -1220,6 +1168,150 @@ class ImapFolder extends Folder<ImapMessage> {
             return (uidMap.isEmpty()) ? null : uidMap;
         } catch (IOException ioe) {
             throw ioExceptionHandler(connection, ioe);
+        }
+    }
+
+    private void appendWithoutMultiappend(List<? extends Message> messages, Map<String, String> uidMap)
+            throws IOException, MessagingException {
+        String escapedFolderName = getEscapedFolderName();
+
+        for (Message message : messages) {
+            long messageSize = message.calculateSize();
+
+            String command = String.format(Locale.US, "APPEND %s (%s) {%d}", escapedFolderName,
+                    combineFlags(message.getFlags()), messageSize);
+            connection.sendCommand(command, false);
+
+            ImapResponse response;
+            do {
+                response = connection.readResponse();
+
+                handleUntaggedResponse(response);
+
+                if (response.isContinuationRequested()) {
+                    EOLConvertingOutputStream eolOut = new EOLConvertingOutputStream(connection.getOutputStream());
+                    message.writeTo(eolOut);
+                    eolOut.write('\r');
+                    eolOut.write('\n');
+                    eolOut.flush();
+                }
+            } while (response.getTag() == null);
+
+            findAndSaveNewUids(response, Collections.singletonList(message), uidMap);
+        }
+    }
+
+    private void appendWithMultiappend(List<? extends Message> messages, Map<String, String> uidMap)
+            throws IOException, MessagingException {
+        EOLConvertingOutputStream eolOut = new EOLConvertingOutputStream(connection.getOutputStream());
+        ImapResponse response;
+        int i = 0;
+
+        while (i < messages.size()) {
+            boolean firstInBatch = true;
+            Message firstMessageInBatch = messages.get(i);
+            long currentWindowSize = 0;
+            List<Message> appendedMessages = new ArrayList<>();
+
+            String command = String.format(Locale.US, "APPEND %s (%s) {%d}", getEscapedFolderName(),
+                    combineFlags(firstMessageInBatch.getFlags()), firstMessageInBatch.calculateSize());
+            connection.sendCommand(command, false);
+
+            response = connection.readResponse();
+            handleUntaggedResponse(response);
+
+            if (response.isContinuationRequested()) {
+                while ((currentWindowSize <= APPEND_WINDOW_SIZE || appendedMessages.size() == 0)
+                        && i < messages.size()) {
+                    Message messageToAppend = messages.get(i);
+                    long messageSize = messageToAppend.calculateSize();
+
+                    if (currentWindowSize + messageSize > APPEND_WINDOW_SIZE &&
+                            appendedMessages.size() > 0) {
+                        break;
+                    }
+
+                    if (!firstInBatch) {
+                        String newMessageContinuation = String.format(Locale.US, "(%s) {%d}",
+                                combineFlags(messageToAppend.getFlags()), messageSize);
+                        connection.sendContinuation(newMessageContinuation);
+                    }
+
+                    messageToAppend.writeTo(eolOut);
+                    eolOut.flush();
+
+                    appendedMessages.add(messageToAppend);
+                    currentWindowSize += messageSize;
+                    firstInBatch = false;
+                    i++;
+                }
+
+                eolOut.write('\r');
+                eolOut.write('\n');
+                eolOut.flush();
+            } else {
+                throw new IllegalStateException("Did not get a continuation response to APPEND");
+            }
+
+            while (response != null && response.getTag() == null) {
+                response = connection.readResponse();
+                handleUntaggedResponse(response);
+            }
+
+            findAndSaveNewUids(response, appendedMessages, uidMap);
+        }
+    }
+
+    private String getEscapedFolderName() throws MessagingException {
+        String encodeFolderName = folderNameCodec.encode(getPrefixedName());
+        return ImapUtility.encodeString(encodeFolderName);
+    }
+
+    private void findAndSaveNewUids(ImapResponse response, List<? extends Message> messages,
+                            Map<String, String> uidMap) throws MessagingException {
+        boolean updatedUids = false;
+        if (response.size() > 1) {
+            /*
+             * If the server supports UIDPLUS, then along with the APPEND response it
+             * will return an APPENDUID response code, e.g.
+             *
+             * 11 OK [APPENDUID 2 238268] APPEND completed
+             *
+             * We can use the UID included in this response to update our records.
+             */
+            Object responseList = response.get(1);
+
+            if (responseList instanceof ImapList) {
+                ImapList appendList = (ImapList) responseList;
+                if (appendList.size() >= 3 && appendList.getString(0).equals("APPENDUID")) {
+                    String newUidString = appendList.getString(2);
+
+                    if (!TextUtils.isEmpty(newUidString)) {
+                        List<String> newUids = ImapUtility.getImapSequenceValues(newUidString);
+                        for (int i = 0;i < messages.size();i++) {
+                            Message message = messages.get(i);
+                            String newUid = newUids.get(i);
+                            uidMap.put(message.getUid(), newUid);
+                            message.setUid(newUid);
+                        }
+                        updatedUids = true;
+                    }
+                }
+            }
+        }
+
+        if (!updatedUids) {
+            for (Message message : messages) {
+                String newUid = getUidFromMessageId(message);
+                if (K9MailLib.isDebug()) {
+                    Timber.d("Got UID %s for message for %s", newUid, getLogId());
+                }
+
+                if (!TextUtils.isEmpty(newUid)) {
+                    uidMap.put(message.getUid(), newUid);
+                    message.setUid(newUid);
+                }
+            }
         }
     }
 

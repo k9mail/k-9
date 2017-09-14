@@ -691,6 +691,10 @@ class ImapConnection {
         return capabilities.contains(Capabilities.IDLE);
     }
 
+    boolean isMultiappendCapable() {
+        return capabilities.contains(Capabilities.MULTIAPPEND);
+    }
+
     public void close() {
         open = false;
         stacktraceForClose = new Exception();

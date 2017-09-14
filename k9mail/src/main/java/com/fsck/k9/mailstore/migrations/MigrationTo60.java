@@ -13,7 +13,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.annotation.VisibleForTesting;
 
-import com.fsck.k9.controller.MessagingControllerCommands.PendingAppend;
 import com.fsck.k9.controller.MessagingControllerCommands.PendingCommand;
 import com.fsck.k9.controller.MessagingControllerCommands.PendingEmptyTrash;
 import com.fsck.k9.controller.MessagingControllerCommands.PendingExpunge;
@@ -197,7 +196,7 @@ class MigrationTo60 {
     private static PendingCommand migrateCommandAppend(OldPendingCommand command) {
         String folder = command.arguments[0];
         String uid = command.arguments[1];
-        return PendingAppend.create(folder, uid);
+        return MigrationTo61.V60PendingAppend.create(folder, uid);
     }
 
     private static List<OldPendingCommand> getPendingCommands(SQLiteDatabase db) {

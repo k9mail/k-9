@@ -9,6 +9,7 @@ import com.fsck.k9.controller.MessagingControllerCommands.PendingEmptyTrash;
 import com.fsck.k9.controller.MessagingControllerCommands.PendingMoveOrCopy;
 import org.junit.Test;
 
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 
@@ -43,7 +44,7 @@ public class PendingCommandSerializerTest {
 
     @Test
     public void testSerializeDeserialize__withArguments() {
-        PendingCommand pendingCommand = PendingAppend.create(SOURCE_FOLDER, UID);
+        PendingCommand pendingCommand = PendingAppend.create(SOURCE_FOLDER, singletonList(UID));
 
         String serializedCommand = pendingCommandSerializer.serialize(pendingCommand);
         PendingAppend unserializedCommand = (PendingAppend) pendingCommandSerializer.unserialize(
@@ -51,7 +52,7 @@ public class PendingCommandSerializerTest {
 
         assertEquals(DATABASE_ID, unserializedCommand.databaseId);
         assertEquals(SOURCE_FOLDER, unserializedCommand.folder);
-        assertEquals(UID, unserializedCommand.uid);
+        assertEquals(singletonList(UID), unserializedCommand.uids);
     }
 
     @Test
