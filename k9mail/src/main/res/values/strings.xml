@@ -520,6 +520,8 @@ Please submit bug reports, contribute new features and ask questions at
     <string name="account_setup_options_mail_display_count_all">all messages</string>
 
     <string name="move_copy_cannot_copy_unsynced_message">Cannot copy or move a message that is not synchronized with the server</string>
+    <string name="move_copy_message_not_fully_downloaded">Cannot copy or move a message across accounts that is not
+        fully downloaded</string>
 
     <string name="account_setup_failed_dlg_title">Setup could not finish</string>
     <string name="account_setup_failed_dlg_auth_message_fmt">Username or password incorrect.\n(<xliff:g id="error">%s</xliff:g>)</string>

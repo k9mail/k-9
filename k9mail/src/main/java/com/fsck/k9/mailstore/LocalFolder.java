@@ -37,6 +37,7 @@ import com.fsck.k9.mail.Body;
 import com.fsck.k9.mail.BodyPart;
 import com.fsck.k9.mail.BoundaryGenerator;
 import com.fsck.k9.mail.FetchProfile;
+import com.fsck.k9.mail.FetchProfile.Item;
 import com.fsck.k9.mail.Flag;
 import com.fsck.k9.mail.Folder;
 import com.fsck.k9.mail.Message;
@@ -1086,6 +1087,18 @@ public class LocalFolder extends Folder<LocalMessage> {
                                     message.getUid(),
                                     lMessage.getDatabaseId(),
                                     getServerId());
+
+                            if (!getAccount().equals(((LocalFolder) destFolder).getAccount())) {
+                                FetchProfile fp = new FetchProfile();
+                                fp.add(Item.ENVELOPE);
+                                fp.add(Item.BODY);
+                                fetch(Collections.singletonList(lMessage), fp, null);
+                                String newUid = copyMessages(Collections.singletonList(message), destFolder)
+                                        .get(oldUID);
+                                message.destroy();
+                                uidMap.put(oldUID, newUid);
+                                return null;
+                            }
 
                             String newUid = K9.LOCAL_UID_PREFIX + UUID.randomUUID().toString();
                             message.setUid(newUid);
