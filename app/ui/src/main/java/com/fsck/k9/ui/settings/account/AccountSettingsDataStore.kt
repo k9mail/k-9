@@ -4,6 +4,7 @@ import androidx.preference.PreferenceDataStore
 import com.fsck.k9.Account
 import com.fsck.k9.Account.SpecialFolderSelection
 import com.fsck.k9.Preferences
+import com.fsck.k9.helper.ImageResizer
 import com.fsck.k9.job.K9JobManager
 import java.util.concurrent.ExecutorService
 
@@ -38,6 +39,7 @@ class AccountSettingsDataStore(
             "remote_search_enabled" -> account.isAllowRemoteSearch
             "autocrypt_prefer_encrypt" -> account.autocryptPreferEncryptMutual
             "upload_sent_messages" -> account.isUploadSentMessages
+            "resize_image_enabled" -> account.isResizeImageEnabled
             else -> defValue
         }
     }
@@ -71,6 +73,7 @@ class AccountSettingsDataStore(
             "openpgp_encrypt_all_drafts" -> account.isOpenPgpEncryptAllDrafts = value
             "autocrypt_prefer_encrypt" -> account.autocryptPreferEncryptMutual = value
             "upload_sent_messages" -> account.isUploadSentMessages = value
+            "resize_image_enabled" -> account.isResizeImageEnabled = value
             else -> return
         }
 
@@ -144,6 +147,8 @@ class AccountSettingsDataStore(
             "account_vibrate_times" -> account.notificationSetting.vibrateTimes.toString()
             "account_remote_search_num_results" -> account.remoteSearchNumResults.toString()
             "account_ringtone" -> account.notificationSetting.ringtone
+            "resize_image_circumference" -> Integer.toString(account.resizeImageCircumference)
+            "resize_image_quality" -> Integer.toString(account.resizeImageQuality)
             else -> defValue
         }
     }
@@ -196,6 +201,8 @@ class AccountSettingsDataStore(
                 isRingEnabled = true
                 ringtone = value
             }
+            "resize_image_circumference" -> account.resizeImageCircumference = ImageResizer.convertResizeImageCircumference(value)
+            "resize_image_quality" -> account.resizeImageQuality = ImageResizer.convertResizeImageQuality(value)
             else -> return
         }
 

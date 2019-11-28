@@ -1250,4 +1250,12 @@ You can keep this message and use it as a backup for your secret key. If you wan
     <!-- permissions -->
     <string name="permission_contacts_rationale_title">Allow access to contacts</string>
     <string name="permission_contacts_rationale_message">To be able to provide contact suggestions and to display contact names and photos, the app needs access to your contacts.</string>
+
+    <string name="account_settings_resize_image_settings_label">Image Resize Settings</string>
+    <string name="account_settings_resize_image_enabled">Automatically resize image attachments</string>
+    <string name="account_settings_resize_image_enabled_summary">Automatically resize all image attachments while sending an email</string>
+    <string name="account_settings_resize_image_circumference">Circumference / 2</string>
+    <string name="account_settings_resize_image_circumference_label">The images are reduced in such a way that width plus height correspond to this value, smaller images are not enlarged</string>
+    <string name="account_settings_resize_image_quality">Quality</string>
+    <string name="account_settings_resize_image_quality_label">A value between 10 and 100 that determines the quality for the JPEG processing</string>
 </resources>

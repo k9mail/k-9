@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingLeft="24dp"
+    android:paddingTop="24dp"
+    android:paddingRight="24dp"
+    android:paddingBottom="24dp">
+
+    <TextView
+        android:gravity="center_horizontal"
+        android:text="@string/account_settings_resize_image_circumference"
+        android:textAppearance="?android:textAppearanceMedium"
+        android:textSize="24sp" />
+
+    <TableRow
+        android:gravity="center_horizontal">
+
+        <EditText
+            android:id="@+id/resize_image_attachment_circumference"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxEms="4"
+            android:maxLength="4"
+            android:singleLine="true" />
+    </TableRow>
+
+    <TextView
+        android:text="@string/account_settings_resize_image_circumference_label"
+        android:textAppearance="?android:textAppearanceSmall" />
+
+    <TextView
+        android:gravity="center_horizontal"
+        android:paddingTop="24dp"
+        android:text="@string/account_settings_resize_image_quality"
+        android:textAppearance="?android:textAppearanceMedium"
+        android:textSize="24sp" />
+
+    <TableRow
+        android:gravity="center_horizontal">
+    <EditText
+        android:id="@+id/resize_image_attachment_quality"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxEms="3"
+        android:maxLength="3"
+        android:singleLine="true" />
+    </TableRow>
+
+    <TextView
+        android:text="@string/account_settings_resize_image_quality_label"
+        android:textAppearance="?android:textAppearanceSmall" />
+
+</TableLayout>

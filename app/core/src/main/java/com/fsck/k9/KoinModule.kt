@@ -2,6 +2,7 @@ package com.fsck.k9
 
 import android.content.Context
 import com.fsck.k9.helper.Contacts
+import com.fsck.k9.helper.ImageResizer
 import com.fsck.k9.mail.power.PowerManager
 import com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory
 import com.fsck.k9.mail.ssl.LocalKeyStore
@@ -22,4 +23,5 @@ val mainModule = module {
     single { LocalKeyStoreManager(get()) }
     single<TrustedSocketFactory> { DefaultTrustedSocketFactory(get(), get()) }
     single { Clock.INSTANCE }
+    single { ImageResizer(get()) }
 }

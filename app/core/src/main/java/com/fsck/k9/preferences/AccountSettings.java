@@ -264,6 +264,15 @@ public class AccountSettings {
         s.put("trashFolderSelection", Settings.versions(
                 new V(54, new EnumSetting<>(SpecialFolderSelection.class, SpecialFolderSelection.AUTOMATIC))
         ));
+        s.put("resizeImageEnabled", Settings.versions(
+                new V(58, new BooleanSetting(Account.DEFAULT_RESIZE_IMAGE_ENABLED))
+        ));
+        s.put("resizeImageCircumference", Settings.versions(
+                new V(58, new StringSetting(Integer.toString(Account.DEFAULT_RESIZE_IMAGE_CIRCUMFERENCE)))
+        ));
+        s.put("resizeImageQuality", Settings.versions(
+                new V(58, new StringSetting(Integer.toString(Account.DEFAULT_RESIZE_IMAGE_QUALITY)))
+        ));
         // note that there is no setting for openPgpProvider, because this will have to be set up together
         // with the actual provider after import anyways.
 

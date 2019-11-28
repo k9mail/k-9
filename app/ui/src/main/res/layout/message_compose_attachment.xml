@@ -10,9 +10,17 @@
     <ImageButton
         android:id="@+id/attachment_delete"
         android:src="@drawable/ic_delete"
-        android:layout_alignParentRight="true"
+        android:layout_toLeftOf="@+id/resize_image"
+        android:layout_alignWithParentIfMissing="true"
         android:layout_height="42dip"
         android:layout_width="42dip" />
+
+    <ImageButton
+        android:id="@+id/resize_image"
+        android:layout_alignParentRight="true"
+        android:src="@drawable/ic_resize"
+        android:layout_width="42dip"
+        android:layout_height="42dip" />
 
     <LinearLayout
         android:layout_width="1dip"

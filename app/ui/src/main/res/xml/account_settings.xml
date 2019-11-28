@@ -233,6 +233,31 @@
             android:summary="@string/account_settings_outgoing_summary"
             android:title="@string/account_settings_outgoing_label" />
 
+        <PreferenceScreen
+            android:title="@string/account_settings_resize_image_settings_label"
+            android:summary="@string/account_settings_resize_image_enabled_summary"
+            android:key="resize_image">
+
+            <CheckBoxPreference
+                android:key="resize_image_enabled"
+                android:title="@string/account_settings_resize_image_enabled"
+                android:summary="@string/account_settings_resize_image_enabled_summary"
+                />
+
+            <EditTextPreference
+                android:key="resize_image_circumference"
+                android:singleLine="true"
+                android:title="@string/account_settings_resize_image_circumference"
+                android:summary="@string/account_settings_resize_image_circumference_label"
+                android:dependency="resize_image_enabled"/>
+            <EditTextPreference
+                android:key="resize_image_quality"
+                android:singleLine="true"
+                android:title="@string/account_settings_resize_image_quality"
+                android:summary="@string/account_settings_resize_image_quality_label"
+                android:dependency="resize_image_enabled"/>
+        </PreferenceScreen>
+
     </PreferenceScreen>
 
     <PreferenceScreen

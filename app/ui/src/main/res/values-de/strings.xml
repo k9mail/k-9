@@ -1033,6 +1033,15 @@ Du kannst diese Nachricht behalten und als Backup für deinen geheimen Schlüsse
   <string name="navigation_drawer_open">Öffnen</string>
   <string name="navigation_drawer_close">Schließen</string>
   <!--permissions-->
+
+  <string name="account_settings_resize_image_settings_label">Bildanhänge verkleinern</string>
+  <string name="account_settings_resize_image_enabled">Bildanhänge automatisch verkleinern</string>
+  <string name="account_settings_resize_image_enabled_summary">Alle Bildanhänge beim Senden der E-Mail automatisch verkleinern</string>
+  <string name="account_settings_resize_image_circumference">Umfang / 2</string>
+  <string name="account_settings_resize_image_circumference_label">Die Bilder werden derart verkleinert, dass Breite plus Höhe diesem Wert entsprechen, kleinere Bilder werden nicht vergrößert</string>
+  <string name="account_settings_resize_image_quality">Qualität</string>
+  <string name="account_settings_resize_image_quality_label">Ein Wert zwischen 10 und 100 der die Qualität für das JPEG-Verfahren festlegt</string>
+
   <string name="permission_contacts_rationale_title">Zugriff auf Kontakte erlauben</string>
   <string name="permission_contacts_rationale_message">Um Kontakte vorzuschlagen und Namen und Fotos der Kontakte anzuzeigen, benötigt die App Zugriff auf deine Kontakte.</string>
 </resources>

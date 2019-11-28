@@ -10,6 +10,8 @@ import android.content.Intent;
 import android.os.AsyncTask;
 
 import com.fsck.k9.CoreResourceProvider;
+import com.fsck.k9.DI;
+import com.fsck.k9.helper.ImageResizer;
 import com.fsck.k9.mail.internet.AddressHeaderBuilder;
 import com.fsck.k9.mail.internet.Headers;
 import timber.log.Timber;
@@ -68,12 +70,14 @@ public abstract class MessageBuilder {
     private MessageReference messageReference;
     private boolean isDraft;
     private boolean isPgpInlineEnabled;
+    private ImageResizer imageResizer;
 
     protected MessageBuilder(MessageIdGenerator messageIdGenerator,
             BoundaryGenerator boundaryGenerator, CoreResourceProvider resourceProvider) {
         this.messageIdGenerator = messageIdGenerator;
         this.boundaryGenerator = boundaryGenerator;
         this.resourceProvider = resourceProvider;
+        this.imageResizer = DI.get(ImageResizer.class);
     }
 
     /**
@@ -225,6 +229,10 @@ public abstract class MessageBuilder {
      * @throws MessagingException
      */
     private void addAttachmentsToMessage(final MimeMultipart mp) throws MessagingException {
+
+        // resize attached images according to each attachment's settings.
+        imageResizer.createAttachmentListWithResizedImages(attachments);
+
         for (Attachment attachment : attachments) {
             if (attachment.getState() != Attachment.LoadingState.COMPLETE) {
                 continue;

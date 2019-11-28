@@ -1,6 +1,8 @@
 package com.fsck.k9.message;
 
 
+import android.net.Uri;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -14,7 +16,7 @@ import java.util.List;
 import com.fsck.k9.Account.QuoteStyle;
 import com.fsck.k9.CoreResourceProvider;
 import com.fsck.k9.Identity;
-import com.fsck.k9.RobolectricTest;
+import com.fsck.k9.K9RobolectricTest;
 import com.fsck.k9.TestCoreResourceProvider;
 import com.fsck.k9.mail.Address;
 import com.fsck.k9.mail.BodyPart;
@@ -27,6 +29,8 @@ import com.fsck.k9.mail.internet.MimeMessage;
 import com.fsck.k9.mail.internet.MimeMultipart;
 import com.fsck.k9.message.MessageBuilder.Callback;
 import com.fsck.k9.message.quote.InsertableHtmlContent;
+
+import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -42,7 +46,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 
-public class MessageBuilderTest extends RobolectricTest {
+public class MessageBuilderTest extends K9RobolectricTest {
     private static final String TEST_MESSAGE_TEXT = "soviet message\r\ntext ☭";
     private static final String TEST_ATTACHMENT_TEXT = "text data in attachment";
     private static final String TEST_SUBJECT = "test_subject";
@@ -187,9 +191,9 @@ public class MessageBuilderTest extends RobolectricTest {
     private CoreResourceProvider resourceProvider = new TestCoreResourceProvider();
     private Callback callback;
 
-
     @Before
     public void setUp() throws Exception {
+
         messageIdGenerator = mock(MessageIdGenerator.class);
         when(messageIdGenerator.generateMessageId(any(Message.class))).thenReturn(TEST_MESSAGE_ID);
 
@@ -363,6 +367,37 @@ public class MessageBuilderTest extends RobolectricTest {
 
         return new Attachment() {
             @Override
+            public void setResizeImagesEnabled(boolean b) {
+                // dummy
+            }
+
+            @Override
+            public boolean getResizeImagesEnabled() {
+                return false;
+            }
+
+            @Override
+            public int getResizeImageQuality() {
+                return 0;
+            }
+
+            @Override
+            public int getResizeImageCircumference() {
+                return 0;
+            }
+
+            @Override
+            public void setSize(@Nullable Long aLong) {
+                // dummy
+            }
+
+            @Nullable
+            @Override
+            public Uri getUri() {
+                return null;
+            }
+
+            @Override
             public Long getSize() {
                 return (long) bytes.length;
             }
@@ -382,6 +417,10 @@ public class MessageBuilderTest extends RobolectricTest {
                 return tempFile.getAbsolutePath();
             }
 
+            @Override
+            public void setFileName(@Nullable String aString) {
+                // dummy
+            }
             @Override
             public LoadingState getState() {
                 return LoadingState.COMPLETE;

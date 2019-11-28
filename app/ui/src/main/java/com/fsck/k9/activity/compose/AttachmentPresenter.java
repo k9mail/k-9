@@ -12,6 +12,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+
+import androidx.annotation.Nullable;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.Loader;
 
@@ -111,11 +113,7 @@ public class AttachmentPresenter {
     }
 
     public ArrayList<Attachment> createAttachmentList() {
-        ArrayList<Attachment> result = new ArrayList<>();
-        for (Attachment attachment : attachments.values()) {
-            result.add(attachment);
-        }
-        return result;
+        return new ArrayList<>(attachments.values());
     }
 
     public List<com.fsck.k9.message.Attachment> getAttachments() {
@@ -157,6 +155,10 @@ public class AttachmentPresenter {
 
     public void addAttachment(Uri uri, String contentType) {
         addAttachment(uri, contentType, false);
+    }
+
+    public Attachment getAttachment(Uri uri) {
+        return attachments.get(uri);
     }
 
     private void addAttachment(Uri uri, String contentType, boolean allowMessageType) {

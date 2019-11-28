@@ -140,6 +140,10 @@ class AccountPreferenceSerializer(
             isMarkMessageAsReadOnView = storage.getBoolean("$accountUuid.markMessageAsReadOnView", true)
             isAlwaysShowCcBcc = storage.getBoolean("$accountUuid.alwaysShowCcBcc", false)
 
+            isResizeImageEnabled = storage.getBoolean("$accountUuid.resizeImageEnabled", DEFAULT_RESIZE_IMAGE_ENABLED)
+            resizeImageCircumference = storage.getInt("$accountUuid.resizeImageCircumference", DEFAULT_RESIZE_IMAGE_CIRCUMFERENCE)
+            resizeImageQuality = storage.getInt("$accountUuid.resizeImageQuality", DEFAULT_RESIZE_IMAGE_QUALITY)
+
             // Use email address as account description if necessary
             if (description == null) {
                 description = email
@@ -280,6 +284,10 @@ class AccountPreferenceSerializer(
             editor.putBoolean("$accountUuid.markMessageAsReadOnView", isMarkMessageAsReadOnView)
             editor.putBoolean("$accountUuid.alwaysShowCcBcc", isAlwaysShowCcBcc)
 
+            editor.putBoolean("$accountUuid.resizeImageEnabled", isResizeImageEnabled)
+            editor.putInt("$accountUuid.resizeImageCircumference", resizeImageCircumference)
+            editor.putInt("$accountUuid.resizeImageQuality", resizeImageQuality)
+
             editor.putBoolean("$accountUuid.vibrate", notificationSetting.isVibrateEnabled)
             editor.putInt("$accountUuid.vibratePattern", notificationSetting.vibratePattern)
             editor.putInt("$accountUuid.vibrateTimes", notificationSetting.vibrateTimes)
@@ -401,6 +409,11 @@ class AccountPreferenceSerializer(
         editor.remove("$accountUuid.messageFormat")
         editor.remove("$accountUuid.messageReadReceipt")
         editor.remove("$accountUuid.notifyMailCheck")
+
+        editor.remove("$accountUuid.resizeImageEnabled")
+        editor.remove("$accountUuid.resizeImageCircumference")
+        editor.remove("$accountUuid.resizeImageQuality")
+
         for (type in NetworkType.values()) {
             editor.remove("$accountUuid.useCompression." + type.name)
         }
@@ -538,6 +551,10 @@ class AccountPreferenceSerializer(
             isEnabled = true
             isMarkMessageAsReadOnView = true
             isAlwaysShowCcBcc = false
+
+            isResizeImageEnabled = DEFAULT_RESIZE_IMAGE_ENABLED
+            resizeImageCircumference = DEFAULT_RESIZE_IMAGE_CIRCUMFERENCE
+            resizeImageQuality = DEFAULT_RESIZE_IMAGE_QUALITY
 
             setArchiveFolder(null, SpecialFolderSelection.AUTOMATIC)
             setDraftsFolder(null, SpecialFolderSelection.AUTOMATIC)
