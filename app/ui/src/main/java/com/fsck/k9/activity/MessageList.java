@@ -997,6 +997,16 @@ public class MessageList extends K9Activity implements MessageListFragmentListen
             messageViewFragment.onToggleAllHeadersView();
             updateMenu();
             return true;
+        } else if (id == R.id.set_format_plain) {
+            messageViewFragment.setRenderPlainFormat(true);
+            messageViewFragment.asyncReloadMessage(); /* call refresh */
+            updateMenu();
+            return true;
+        } else if (id == R.id.set_format_html) {
+            messageViewFragment.setRenderPlainFormat(false);
+            messageViewFragment.asyncReloadMessage(); /* call refresh */
+            updateMenu();
+            return true;
         }
 
         if (!singleFolderMode) {
@@ -1071,6 +1081,8 @@ public class MessageList extends K9Activity implements MessageListFragmentListen
             menu.findItem(R.id.toggle_message_view_theme).setVisible(false);
             menu.findItem(R.id.show_headers).setVisible(false);
             menu.findItem(R.id.hide_headers).setVisible(false);
+            menu.findItem(R.id.set_format_html).setVisible(false);
+            menu.findItem(R.id.set_format_plain).setVisible(false);
         } else {
             // hide prev/next buttons in split mode
             if (displayMode != DisplayMode.MESSAGE_VIEW) {
@@ -1156,6 +1168,12 @@ public class MessageList extends K9Activity implements MessageListFragmentListen
                 menu.findItem(R.id.show_headers).setVisible(false);
             } else {
                 menu.findItem(R.id.hide_headers).setVisible(false);
+            }
+
+            if (messageViewFragment.getRenderPlainFormat()) {
+                menu.findItem(R.id.set_format_plain).setVisible(false);
+            } else {
+                menu.findItem(R.id.set_format_html).setVisible(false);
             }
         }
 

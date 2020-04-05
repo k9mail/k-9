@@ -77,7 +77,7 @@ public class MessageContainerView extends LinearLayout implements OnCreateContex
     private AttachmentViewCallback attachmentCallback;
     private Map<AttachmentViewInfo, AttachmentView> attachmentViewMap = new HashMap<>();
     private Map<Uri, AttachmentViewInfo> attachments = new HashMap<>();
-    private boolean hasHiddenExternalImages;
+    private boolean hasHiddenExternalImages = false;
 
     private String currentHtmlText;
     private AttachmentResolver currentAttachmentResolver;
@@ -382,7 +382,8 @@ public class MessageContainerView extends LinearLayout implements OnCreateContex
     }
 
     public void displayMessageViewContainer(MessageViewInfo messageViewInfo,
-            final OnRenderingFinishedListener onRenderingFinishedListener, boolean loadPictures,
+            final boolean renderPlainFormat, final OnRenderingFinishedListener onRenderingFinishedListener,
+            boolean loadPictures,
             boolean hideUnsignedTextDivider, AttachmentViewCallback attachmentCallback) {
 
         this.attachmentCallback = attachmentCallback;
@@ -391,15 +392,22 @@ public class MessageContainerView extends LinearLayout implements OnCreateContex
 
         renderAttachments(messageViewInfo);
 
-        String textToDisplay = messageViewInfo.text;
-        if (textToDisplay != null && !isShowingPictures()) {
-            if (Utility.hasExternalImages(textToDisplay)) {
-                if (loadPictures) {
-                    setLoadPictures(true);
-                } else {
-                    hasHiddenExternalImages = true;
+        String textToDisplay;
+        hasHiddenExternalImages = false;
+        if (!renderPlainFormat) {
+            textToDisplay = messageViewInfo.text;
+
+            if (textToDisplay != null && !isShowingPictures()) {
+                if (Utility.hasExternalImages(textToDisplay)) {
+                    if (loadPictures) {
+                        setLoadPictures(true);
+                    } else {
+                        hasHiddenExternalImages = true;
+                    }
                 }
             }
+        } else {
+            textToDisplay = displayHtml.wrapMessageContent(messageViewInfo.textPlainFormatted);
         }
 
         if (textToDisplay == null) {

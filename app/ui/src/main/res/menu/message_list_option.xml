@@ -149,6 +149,18 @@
           app:showAsAction="never"
           android:title="@string/hide_headers_action"/>
 
+    <item
+        android:id="@+id/set_format_html"
+        android:title="@string/set_format_html_action"
+        android:titleCondensed="@string/set_format_html_condensed_action"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/set_format_plain"
+        android:title="@string/set_format_plain_action"
+        android:titleCondensed="@string/set_format_plain_condensed_action"
+        app:showAsAction="never" />
+
     <!-- always -->
     <item
         android:id="@+id/compose"
