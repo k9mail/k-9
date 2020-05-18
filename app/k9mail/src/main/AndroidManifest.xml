@@ -201,6 +201,8 @@
             android:name=".activity.MessageCompose"
             android:configChanges="locale"
             android:enabled="false"
+            android:launchMode="singleTask"
+            android:taskAffinity="${applicationId}.compose"
             android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.SENDTO"/>

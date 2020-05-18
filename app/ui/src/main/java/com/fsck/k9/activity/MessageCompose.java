@@ -240,7 +240,7 @@ public class MessageCompose extends K9Activity implements OnClickListener,
         super.onCreate(savedInstanceState);
 
         if (UpgradeDatabases.actionUpgradeDatabases(this, getIntent())) {
-            finish();
+            finishAndRemoveTask();
             return;
         }
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
@@ -293,7 +293,7 @@ public class MessageCompose extends K9Activity implements OnClickListener,
              */
             MessageList.launch(this);
             changesMadeSinceLastSave = false;
-            finish();
+            finishAndRemoveTask();
             return;
         }
 
@@ -789,7 +789,7 @@ public class MessageCompose extends K9Activity implements OnClickListener,
         if (navigateUp) {
             openDefaultFolder();
         } else {
-            finish();
+            finishAndRemoveTask();
         }
     }
 
@@ -1068,7 +1068,7 @@ public class MessageCompose extends K9Activity implements OnClickListener,
         search.addAccountUuid(account.getUuid());
         search.addAllowedFolder(folderId);
         MessageList.actionDisplaySearch(this, search, false, true);
-        finish();
+        finishAndRemoveTask();
     }
 
     private boolean draftIsNotEmpty() {
@@ -1532,7 +1532,7 @@ public class MessageCompose extends K9Activity implements OnClickListener,
             new SaveMessageTask(getApplicationContext(), account, contacts, internalMessageHandler,
                     message, draftId, plaintextSubject, true).execute();
             if (finishAfterDraftSaved) {
-                finish();
+                finishAndRemoveTask();
             } else {
                 setProgressBarIndeterminateVisibility(false);
             }
@@ -1540,7 +1540,7 @@ public class MessageCompose extends K9Activity implements OnClickListener,
             currentMessageBuilder = null;
             new SendMessageTask(getApplicationContext(), account, contacts, message,
                     draftId != INVALID_DRAFT_ID ? draftId : null, plaintextSubject, relatedMessageReference).execute();
-            finish();
+            finishAndRemoveTask();
         }
     }
 

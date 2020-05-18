@@ -28,6 +28,7 @@ public class MessageActions {
             Intent i = new Intent(context, MessageCompose.class);
             i.putExtra(MessageCompose.EXTRA_ACCOUNT, accountUuid);
             i.setAction(MessageCompose.ACTION_COMPOSE);
+            i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
             context.startActivity(i);
         }
     }
@@ -46,6 +47,7 @@ public class MessageActions {
         } else {
             i.setAction(MessageCompose.ACTION_REPLY);
         }
+        i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         return i;
     }
 
@@ -53,7 +55,7 @@ public class MessageActions {
         Intent intent = new Intent(context, MessageCompose.class);
         intent.setAction(MessageCompose.ACTION_REPLY);
         intent.putExtra(MessageCompose.EXTRA_MESSAGE_REFERENCE, messageReference.toIdentityString());
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
         return intent;
     }
@@ -75,6 +77,7 @@ public class MessageActions {
         i.putExtra(MessageCompose.EXTRA_MESSAGE_REFERENCE, messageReference.toIdentityString());
         i.putExtra(MessageCompose.EXTRA_MESSAGE_DECRYPTION_RESULT, decryptionResult);
         i.setAction(MessageCompose.ACTION_FORWARD);
+        i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         context.startActivity(i);
     }
 
@@ -86,6 +89,7 @@ public class MessageActions {
         i.putExtra(MessageCompose.EXTRA_MESSAGE_REFERENCE, messageReference.toIdentityString());
         i.putExtra(MessageCompose.EXTRA_MESSAGE_DECRYPTION_RESULT, decryptionResult);
         i.setAction(MessageCompose.ACTION_FORWARD_AS_ATTACHMENT);
+        i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         context.startActivity(i);
     }
 
@@ -99,6 +103,7 @@ public class MessageActions {
         Intent i = new Intent(context, MessageCompose.class);
         i.putExtra(MessageCompose.EXTRA_MESSAGE_REFERENCE, messageReference.toIdentityString());
         i.setAction(MessageCompose.ACTION_EDIT_DRAFT);
+        i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         context.startActivity(i);
     }
 }
