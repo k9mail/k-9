@@ -21,6 +21,7 @@ import com.fsck.k9.DI;
 import com.fsck.k9.EmailAddressValidator;
 import com.fsck.k9.Preferences;
 import com.fsck.k9.account.AccountCreator;
+import com.fsck.k9.mail.oauth.OAuth2Provider;
 import com.fsck.k9.ui.base.K9Activity;
 import com.fsck.k9.activity.setup.AccountSetupCheckSettings.CheckDirection;
 import com.fsck.k9.autodiscovery.api.DiscoveredServerSettings;
@@ -65,6 +66,7 @@ public class AccountSetupBasics extends K9Activity
     private ClientCertificateSpinner mClientCertificateSpinner;
     private Button mNextButton;
     private Button mManualSetupButton;
+    private View mAdvandedOptionsFoldable;
     private Account mAccount;
 
     private EmailAddressValidator mEmailValidator = new EmailAddressValidator();
@@ -87,6 +89,7 @@ public class AccountSetupBasics extends K9Activity
         mNextButton = findViewById(R.id.next);
         mManualSetupButton = findViewById(R.id.manual_setup);
         mShowPasswordCheckBox = findViewById(R.id.show_password);
+        mAdvandedOptionsFoldable = findViewById(R.id.foldable_advanced_options);
         mNextButton.setOnClickListener(this);
         mManualSetupButton.setOnClickListener(this);
     }
@@ -203,14 +206,30 @@ public class AccountSetupBasics extends K9Activity
         String clientCertificateAlias = mClientCertificateSpinner.getAlias();
         String email = mEmailView.getText().toString();
 
+        boolean xoauth2 = false;
+
+        if (email.contains("@")) {
+            String[] split = email.split("@");
+            if (split.length == 2) {
+                String domain = split[1];
+                xoauth2 = OAuth2Provider.Companion.isXOAuth2(domain);
+            }
+        }
+
         boolean valid = Utility.requiredFieldValid(mEmailView)
-                && ((!clientCertificateChecked && Utility.requiredFieldValid(mPasswordView))
+                && ((!clientCertificateChecked && (Utility.requiredFieldValid(mPasswordView) || xoauth2))
                         || (clientCertificateChecked && clientCertificateAlias != null))
                 && mEmailValidator.isValidAddressOnly(email);
 
         mNextButton.setEnabled(valid);
         mNextButton.setFocusable(valid);
         mManualSetupButton.setEnabled(valid);
+
+        mPasswordView.setVisibility(xoauth2 ? View.GONE : View.VISIBLE);
+        mAdvandedOptionsFoldable.setVisibility(xoauth2 ? View.GONE : View.VISIBLE);
+        mShowPasswordCheckBox.setVisibility(xoauth2 ? View.GONE : View.VISIBLE);
+        mManualSetupButton.setVisibility(xoauth2 ? View.GONE : View.VISIBLE);
+
         /*
          * Dim the next button's icon to 50% if the button is disabled.
          * TODO this can probably be done with a stateful drawable. Check into it.

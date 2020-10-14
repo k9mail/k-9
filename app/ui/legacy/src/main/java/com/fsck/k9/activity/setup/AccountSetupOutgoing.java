@@ -348,23 +348,27 @@ public class AccountSetupOutgoing extends K9Activity implements OnClickListener,
      * Shows/hides password field and client certificate spinner
      */
     private void updateViewFromAuthType() {
-        AuthType authType = getSelectedAuthType();
-        boolean isAuthTypeExternal = (AuthType.EXTERNAL == authType);
-
-        if (isAuthTypeExternal) {
-
-            // hide password fields, show client certificate fields
-            mPasswordView.setVisibility(View.GONE);
-            mPasswordLabelView.setVisibility(View.GONE);
-            mClientCertificateLabelView.setVisibility(View.VISIBLE);
-            mClientCertificateSpinner.setVisibility(View.VISIBLE);
-        } else {
-
-            // show password fields, hide client certificate fields
-            mPasswordView.setVisibility(View.VISIBLE);
-            mPasswordLabelView.setVisibility(View.VISIBLE);
-            mClientCertificateLabelView.setVisibility(View.GONE);
-            mClientCertificateSpinner.setVisibility(View.GONE);
+        switch (getSelectedAuthType()) {
+            case EXTERNAL:
+                // hide password fields, show client certificate fields
+                mPasswordView.setVisibility(View.GONE);
+                mPasswordLabelView.setVisibility(View.GONE);
+                mClientCertificateLabelView.setVisibility(View.VISIBLE);
+                mClientCertificateSpinner.setVisibility(View.VISIBLE);
+                break;
+            case XOAUTH2:
+                mPasswordView.setVisibility(View.GONE);
+                mPasswordLabelView.setVisibility(View.GONE);
+                mClientCertificateLabelView.setVisibility(View.GONE);
+                mClientCertificateSpinner.setVisibility(View.GONE);
+                break;
+            default:
+                // show password fields, hide client certificate fields
+                mPasswordView.setVisibility(View.VISIBLE);
+                mPasswordLabelView.setVisibility(View.VISIBLE);
+                mClientCertificateLabelView.setVisibility(View.GONE);
+                mClientCertificateSpinner.setVisibility(View.GONE);
+                break;
         }
     }
 
@@ -430,11 +434,14 @@ public class AccountSetupOutgoing extends K9Activity implements OnClickListener,
                 && hasConnectionSecurity
                 && hasValidCertificateAlias;
 
+        boolean hasValidXOAuth2Settings = hasValidUserName
+                && AuthType.XOAUTH2 == authType;
+
         mNextButton
                 .setEnabled(Utility.domainFieldValid(mServerView)
                         && Utility.requiredFieldValid(mPortView)
                         && (!mRequireLoginView.isChecked()
-                                || hasValidPasswordSettings || hasValidExternalAuthSettings));
+                                || hasValidPasswordSettings || hasValidExternalAuthSettings || hasValidXOAuth2Settings));
         Utility.setCompoundDrawablesAlpha(mNextButton, mNextButton.isEnabled() ? 255 : 128);
     }
 

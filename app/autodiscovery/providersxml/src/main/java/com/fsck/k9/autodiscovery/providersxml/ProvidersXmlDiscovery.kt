@@ -8,6 +8,8 @@ import com.fsck.k9.autodiscovery.api.DiscoveryTarget
 import com.fsck.k9.backend.BackendManager
 import com.fsck.k9.helper.EmailHelper
 import com.fsck.k9.helper.UrlEncodingHelper
+import com.fsck.k9.mail.AuthType
+import com.fsck.k9.mail.oauth.OAuth2Provider
 import java.net.URI
 import java.net.URISyntaxException
 import org.xmlpull.v1.XmlPullParser
@@ -26,6 +28,10 @@ class ProvidersXmlDiscovery(
 
         val provider = findProviderForDomain(domain) ?: return null
         try {
+            val xoauth2 = OAuth2Provider.isXOAuth2(domain)
+            val xoauth2Label = if (xoauth2) AuthType.XOAUTH2.name else ""
+            val xoauth2Colon = if (xoauth2) ":" else ""
+
             val userUrlEncoded = UrlEncodingHelper.encodeUtf8(user)
             val emailUrlEncoded = UrlEncodingHelper.encodeUtf8(email)
 
@@ -34,7 +40,7 @@ class ProvidersXmlDiscovery(
                     .replace("\$user", userUrlEncoded)
                     .replace("\$domain", domain)
             val incomingUri = with(URI(provider.incomingUriTemplate)) {
-                URI(scheme, "$incomingUserUrlEncoded:$password", host, port, null, null, null).toString()
+                URI(scheme, "$xoauth2Label$xoauth2Colon$incomingUserUrlEncoded:$password", host, port, null, null, null).toString()
             }
             val incomingSettings = backendManager.decodeStoreUri(incomingUri).let {
                 listOf(DiscoveredServerSettings(
@@ -51,7 +57,7 @@ class ProvidersXmlDiscovery(
                     ?.replace("\$email", emailUrlEncoded)
                     ?.replace("\$user", userUrlEncoded)
                     ?.replace("\$domain", domain)
-            val outgoingUserInfo = if (outgoingUserUrlEncoded != null) "$outgoingUserUrlEncoded:$password" else null
+            val outgoingUserInfo = if (outgoingUserUrlEncoded != null) "$outgoingUserUrlEncoded:$password$xoauth2Colon$xoauth2Label" else null
             val outgoingUri = with(URI(provider.outgoingUriTemplate)) {
                 URI(scheme, outgoingUserInfo, host, port, null, null, null).toString()
             }

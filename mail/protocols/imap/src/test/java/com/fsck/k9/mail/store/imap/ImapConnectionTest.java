@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.List;
 
-import android.app.Activity;
 import android.net.ConnectivityManager;
 
 import com.fsck.k9.mail.AuthType;
@@ -1071,16 +1070,6 @@ public class ImapConnectionTest {
             public void invalidateToken(String username) {
                 assertEquals(USERNAME, username);
                 invalidationCount++;
-            }
-
-            @Override
-            public List<String> getAccounts() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public void authorizeApi(String username, Activity activity, OAuth2TokenProviderAuthCallback callback) {
-                throw new UnsupportedOperationException();
             }
         };
     }

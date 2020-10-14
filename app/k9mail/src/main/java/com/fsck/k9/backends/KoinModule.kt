@@ -12,7 +12,7 @@ val backendsModule = module {
                         "webdav" to get<WebDavBackendFactory>()
                 ))
     }
-    single { ImapBackendFactory(get(), get(), get(), get()) }
+    single { ImapBackendFactory(get(), get(), get(), get(), get()) }
     single { Pop3BackendFactory(get(), get()) }
     single { WebDavBackendFactory(get(), get(), get()) }
 }

@@ -15,6 +15,7 @@ import com.fsck.k9.mail.helpers.TestMessageBuilder;
 import com.fsck.k9.mail.helpers.TestTrustedSocketFactory;
 import com.fsck.k9.mail.internet.MimeMessage;
 import com.fsck.k9.mail.oauth.OAuth2TokenProvider;
+import com.fsck.k9.mail.oauth.authorizationserver.codegrantflow.OAuth2NeedUserPromptException;
 import com.fsck.k9.mail.ssl.TrustedSocketFactory;
 import com.fsck.k9.mail.transport.mockServer.MockSmtpServer;
 import org.junit.Before;
@@ -45,7 +46,7 @@ public class SmtpTransportTest {
 
 
     @Before
-    public void before() throws AuthenticationFailedException {
+    public void before() throws AuthenticationFailedException, OAuth2NeedUserPromptException {
         socketFactory = TestTrustedSocketFactory.newInstance();
         oAuth2TokenProvider = mock(OAuth2TokenProvider.class);
         when(oAuth2TokenProvider.getToken(eq(USERNAME), anyLong()))
