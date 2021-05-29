@@ -60,6 +60,9 @@ class K9NotificationStrategy(val contacts: Contacts) : NotificationStrategy {
             }
         }
 
+        if (account.isNotificationSuppressed(message))
+            return false
+
         // Don't notify if the sender address matches one of our identities and the user chose not
         // to be notified for such messages.
         return if (account.isAnIdentity(message.from) && !account.isNotifySelfNewMail) {

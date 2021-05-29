@@ -30,6 +30,7 @@ public class NotificationActionService extends Service {
     private static final String ACTION_ARCHIVE = "ACTION_ARCHIVE";
     private static final String ACTION_SPAM = "ACTION_SPAM";
     private static final String ACTION_DISMISS = "ACTION_DISMISS";
+    private static final String ACTION_MUTE_SENDER = "ACTION_MUTE_SENDER";
 
     private static final String EXTRA_ACCOUNT_UUID = "accountUuid";
     private static final String EXTRA_MESSAGE_REFERENCE = "messageReference";
@@ -51,6 +52,15 @@ public class NotificationActionService extends Service {
         intent.setAction(ACTION_MARK_AS_READ);
         intent.putExtra(EXTRA_ACCOUNT_UUID, accountUuid);
         intent.putExtra(EXTRA_MESSAGE_REFERENCES, toMessageReferenceStringList(messageReferences));
+
+        return intent;
+    }
+
+    public static Intent createMuteSenderIntent(Context context, MessageReference messageReference) {
+        Intent intent = new Intent(context, NotificationActionService.class);
+        intent.setAction(ACTION_MUTE_SENDER);
+        intent.putExtra(EXTRA_ACCOUNT_UUID, messageReference.getAccountUuid());
+        intent.putExtra(EXTRA_MESSAGE_REFERENCES, createSingleItemArrayList(messageReference));
 
         return intent;
     }
@@ -151,6 +161,8 @@ public class NotificationActionService extends Service {
             markMessageAsSpam(intent, account, controller);
         } else if (ACTION_DISMISS.equals(action)) {
             Timber.i("Notification dismissed");
+        } else if (ACTION_MUTE_SENDER.equals(action)) {
+            muteSender(intent, account, controller);
         }
 
         cancelNotifications(intent, account, controller);
@@ -173,6 +185,17 @@ public class NotificationActionService extends Service {
             long folderId = messageReference.getFolderId();
             String uid = messageReference.getUid();
             controller.setFlag(account, folderId, uid, Flag.SEEN, true);
+        }
+    }
+
+    private void muteSender(Intent intent, Account account, MessagingController controller) {
+        Timber.i("NotificationActionService muting sender");
+
+        List<String> messageReferenceStrings = intent.getStringArrayListExtra(EXTRA_MESSAGE_REFERENCES);
+        List<MessageReference> messageReferences = toMessageReferenceList(messageReferenceStrings);
+        for (MessageReference messageReference : messageReferences) {
+            controller.cancelNotificationForMessage(account, messageReference);
+            controller.muteSender(messageReference);
         }
     }
 

@@ -392,6 +392,26 @@
             android:summary="@string/account_settings_notification_opens_unread_summary"
             android:title="@string/account_settings_notification_opens_unread_label" />
 
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="mute_mailing_lists"
+            android:summary="@string/account_settings_mute_mailing_lists_summary"
+            android:title="@string/account_settings_mute_mailing_lists_label" />
+
+        <Preference
+            android:key="muted_senders"
+            android:singleLine="false"
+            android:summary="@string/account_settings_muted_senders_summary"
+            android:title="@string/account_settings_muted_senders_label"
+            android:fragment="com.fsck.k9.ui.settings.account.EmailAddressListFragment"/>
+
+        <Preference
+            android:key="mute_if_sent_to"
+            android:singleLine="false"
+            android:summary="@string/account_settings_mute_if_sent_to_summary"
+            android:title="@string/account_settings_mute_if_sent_to_label"
+            android:fragment="com.fsck.k9.ui.settings.account.EmailAddressListFragment"/>
+
         <com.fsck.k9.ui.settings.account.NotificationsPreference
             android:key="open_notification_settings"
             android:summary="@string/account_settings_notification_open_system_notifications_summary"

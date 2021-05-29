@@ -103,6 +103,7 @@ class WearNotifications extends BaseNotifications {
         addDeviceReplyAction(builder, holder);
         addDeviceMarkAsReadAction(builder, holder);
         addDeviceDeleteAction(builder, holder);
+        addDeviceMuteSenderAction(builder, holder);
     }
 
     private void addDeviceReplyAction(Builder builder, NotificationHolder holder) {
@@ -145,6 +146,18 @@ class WearNotifications extends BaseNotifications {
         builder.addAction(icon, title, action);
     }
 
+    private void addDeviceMuteSenderAction(Builder builder, NotificationHolder holder) {
+        int icon = resourceProvider.getIconMuteSender();
+        String title = resourceProvider.actionMuteSender();
+
+        NotificationContent content = holder.content;
+        MessageReference messageReference = content.messageReference;
+        PendingIntent muteSenderPendingIntent =
+                actionCreator.createMuteSenderPendingIntent(messageReference, holder.notificationId);
+
+        builder.addAction(icon, title, muteSenderPendingIntent);
+    }
+
     private void addWearActions(Builder builder, Account account, NotificationHolder holder) {
         NotificationCompat.WearableExtender wearableExtender = new NotificationCompat.WearableExtender();
 
@@ -162,6 +175,8 @@ class WearNotifications extends BaseNotifications {
         if (isSpamActionAvailableForWear(account)) {
             addMarkAsSpamAction(wearableExtender, holder);
         }
+
+        addMuteSenderAction(wearableExtender, holder);
 
         builder.extend(wearableExtender);
     }
@@ -224,6 +239,18 @@ class WearNotifications extends BaseNotifications {
 
         NotificationCompat.Action spamAction = new NotificationCompat.Action.Builder(icon, title, action).build();
         wearableExtender.addAction(spamAction);
+    }
+
+    private void addMuteSenderAction(WearableExtender wearableExtender, NotificationHolder holder) {
+        int icon = resourceProvider.getWearIconMuteSender();
+        String title = resourceProvider.actionMuteSender();
+
+        MessageReference messageReference = holder.content.messageReference;
+        int notificationId = holder.notificationId;
+        PendingIntent action = actionCreator.createMuteSenderPendingIntent(messageReference, notificationId);
+
+        NotificationCompat.Action muteSenderAction = new NotificationCompat.Action.Builder(icon, title, action).build();
+        wearableExtender.addAction(muteSenderAction);
     }
 
     private boolean isDeleteActionAvailableForWear() {

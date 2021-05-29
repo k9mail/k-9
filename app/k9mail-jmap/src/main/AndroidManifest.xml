@@ -138,6 +138,11 @@
             android:label="@string/account_setup_check_settings_title"/>
 
         <activity
+            android:name=".activity.EditEmailAddressList"
+            android:configChanges="locale"
+            android:label="@string/account_settings_edit_list_of_emails_title"/>
+
+        <activity
             android:name="com.fsck.k9.ui.endtoend.AutocryptKeyTransferActivity"
             android:configChanges="locale"
             android:label="@string/ac_transfer_title"

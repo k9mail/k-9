@@ -5,6 +5,7 @@ interface NotificationResourceProvider {
     val iconMarkAsRead: Int
     val iconDelete: Int
     val iconReply: Int
+    val iconMuteSender: Int
     val iconNewMail: Int
     val iconSendingMail: Int
     val iconCheckingMail: Int
@@ -13,6 +14,7 @@ interface NotificationResourceProvider {
     val wearIconArchive: Int
     val wearIconReplyAll: Int
     val wearIconMarkAsSpam: Int
+    val wearIconMuteSender: Int
 
     val messagesChannelName: String
     val messagesChannelDescription: String
@@ -50,4 +52,5 @@ interface NotificationResourceProvider {
     fun actionArchive(): String
     fun actionArchiveAll(): String
     fun actionMarkAsSpam(): String
+    fun actionMuteSender(): String
 }

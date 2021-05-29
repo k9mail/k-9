@@ -206,6 +206,7 @@ Please submit bug reports, contribute new features and ask questions at
     <string name="notification_action_archive">Archive</string>
     <string name="notification_action_archive_all">Archive All</string>
     <string name="notification_action_spam">Spam</string>
+    <string name="notification_action_mute_sender">Mute Sender</string>
     <string name="notification_certificate_error_title">Certificate error for <xliff:g id="account">%s</xliff:g></string>
     <string name="notification_certificate_error_text">Check your server settings</string>
 
@@ -518,8 +519,17 @@ Please submit bug reports, contribute new features and ask questions at
     <string name="account_settings_mark_message_as_read_on_view_summary">Mark a message as read when it is opened for viewing</string>
     <string name="account_settings_mark_message_as_read_on_delete_label">Mark as read when deleted</string>
     <string name="account_settings_mark_message_as_read_on_delete_summary">Mark a message as read when it is deleted</string>
+    <string name="account_settings_muted_senders_label">Muted senders</string>
+    <string name="account_settings_muted_senders_summary">Suppress notifications for mails from these senders</string>
+    <string name="account_settings_mute_if_sent_to_label">Mute for given recipients</string>
+    <string name="account_settings_mute_if_sent_to_summary">Suppress notifications for mails sent to these addresses</string>
+    <string name="account_settings_edit_list_of_emails_title">Edit list of emails</string>
+    <string name="account_settings_edit_email_address_modify">Modify</string>
+    <string name="account_settings_edit_email_address_remove">Remove</string>
     <string name="account_settings_notification_open_system_notifications_label">Notification settings</string>
     <string name="account_settings_notification_open_system_notifications_summary">Open system notification settings</string>
+    <string name="account_settings_mute_mailing_lists_label">Mute mailing lists</string>
+    <string name="account_settings_mute_mailing_lists_summary">Suppress notifications for mails sent via mailing lists</string>
 
     <string name="account_settings_show_pictures_label">Always show images</string>
     <string name="account_settings_show_pictures_never">No</string>

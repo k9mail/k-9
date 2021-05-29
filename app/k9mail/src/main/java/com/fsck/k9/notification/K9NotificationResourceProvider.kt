@@ -8,6 +8,7 @@ class K9NotificationResourceProvider(private val context: Context) : Notificatio
     override val iconMarkAsRead: Int = R.drawable.notification_action_mark_as_read
     override val iconDelete: Int = R.drawable.notification_action_delete
     override val iconReply: Int = R.drawable.notification_action_reply
+    override val iconMuteSender: Int = R.drawable.notification_action_mute_sender
     override val iconNewMail: Int = R.drawable.notification_icon_new_mail
     override val iconSendingMail: Int = R.drawable.notification_icon_check_mail
     override val iconCheckingMail: Int = R.drawable.notification_icon_check_mail
@@ -16,6 +17,7 @@ class K9NotificationResourceProvider(private val context: Context) : Notificatio
     override val wearIconArchive: Int = R.drawable.notification_action_archive
     override val wearIconReplyAll: Int = R.drawable.notification_action_reply
     override val wearIconMarkAsSpam: Int = R.drawable.notification_action_mark_as_spam
+    override val wearIconMuteSender: Int = R.drawable.notification_action_mute_sender
 
     override val messagesChannelName: String
         get() = context.getString(R.string.notification_channel_messages_title)
@@ -77,6 +79,8 @@ class K9NotificationResourceProvider(private val context: Context) : Notificatio
         context.getString(R.string.notification_bg_title_separator)
 
     override fun actionMarkAsRead(): String = context.getString(R.string.notification_action_mark_as_read)
+
+    override fun actionMuteSender(): String = context.getString(R.string.notification_action_mute_sender)
 
     override fun actionMarkAllAsRead(): String = context.getString(R.string.notification_action_mark_all_as_read)
 

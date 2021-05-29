@@ -5,14 +5,16 @@ class TestNotificationResourceProvider : NotificationResourceProvider {
     override val iconMarkAsRead: Int = 2
     override val iconDelete: Int = 3
     override val iconReply: Int = 4
-    override val iconNewMail: Int = 5
-    override val iconSendingMail: Int = 6
-    override val iconCheckingMail: Int = 7
-    override val wearIconMarkAsRead: Int = 8
-    override val wearIconDelete: Int = 9
-    override val wearIconArchive: Int = 10
-    override val wearIconReplyAll: Int = 11
-    override val wearIconMarkAsSpam: Int = 12
+    override val iconMuteSender: Int = 5
+    override val iconNewMail: Int = 6
+    override val iconSendingMail: Int = 7
+    override val iconCheckingMail: Int = 8
+    override val wearIconMarkAsRead: Int = 9
+    override val wearIconDelete: Int = 10
+    override val wearIconArchive: Int = 11
+    override val wearIconReplyAll: Int = 12
+    override val wearIconMarkAsSpam: Int = 13
+    override val wearIconMuteSender: Int = 14
 
     override val messagesChannelName = "Messages"
     override val messagesChannelDescription = "Notifications related to messages"
@@ -77,4 +79,6 @@ class TestNotificationResourceProvider : NotificationResourceProvider {
     override fun actionArchiveAll(): String = "Archive All"
 
     override fun actionMarkAsSpam(): String = "Spam"
+
+    override fun actionMuteSender(): String = "Mute Sender"
 }

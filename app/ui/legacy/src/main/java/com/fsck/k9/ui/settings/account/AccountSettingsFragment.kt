@@ -12,6 +12,8 @@ import androidx.preference.Preference
 import androidx.preference.SwitchPreference
 import com.fsck.k9.Account
 import com.fsck.k9.account.BackgroundAccountRemover
+import com.fsck.k9.activity.EditEmailAddressList
+import com.fsck.k9.activity.EmailAddressListType
 import com.fsck.k9.activity.ManageIdentities
 import com.fsck.k9.activity.setup.AccountSetupComposition
 import com.fsck.k9.activity.setup.AccountSetupIncoming
@@ -179,6 +181,14 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), ConfirmationDialogFr
     }
 
     private fun initializeNotifications() {
+        findPreference<Preference>(PREFERENCE_MUTED_SENDERS)?.onClick {
+            EditEmailAddressList.start(requireActivity(), accountUuid, EmailAddressListType.MUTED_SENDERS)
+        }
+
+        findPreference<Preference>(PREFERENCE_MUTE_IF_SENT_TO)?.onClick {
+            EditEmailAddressList.start(requireActivity(), accountUuid, EmailAddressListType.MUTE_IF_SENT_TO)
+        }
+
         findPreference<Preference>(PREFERENCE_OPEN_NOTIFICATION_SETTINGS)?.let {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 PRE_SDK26_NOTIFICATION_PREFERENCES.forEach { findPreference<Preference>(it).remove() }
@@ -376,6 +386,8 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), ConfirmationDialogFr
         private const val PREFERENCE_SPAM_FOLDER = "spam_folder"
         private const val PREFERENCE_TRASH_FOLDER = "trash_folder"
         private const val PREFERENCE_OPEN_NOTIFICATION_SETTINGS = "open_notification_settings"
+        private const val PREFERENCE_MUTED_SENDERS = "muted_senders"
+        private const val PREFERENCE_MUTE_IF_SENT_TO = "mute_if_sent_to"
         private const val DELETE_POLICY_MARK_AS_READ = "MARK_AS_READ"
 
         private val PRE_SDK26_NOTIFICATION_PREFERENCES = arrayOf(

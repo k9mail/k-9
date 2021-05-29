@@ -32,6 +32,8 @@ public interface NotificationActionCreator {
     PendingIntent createMarkAllAsReadPendingIntent(Account account, List<MessageReference> messageReferences,
             int notificationId);
 
+    PendingIntent createMuteSenderPendingIntent(MessageReference messageReference, int notificationId);
+
     PendingIntent getEditIncomingServerSettingsIntent(Account account);
 
     PendingIntent getEditOutgoingServerSettingsIntent(Account account);

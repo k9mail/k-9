@@ -1,6 +1,7 @@
 package com.fsck.k9.controller;
 
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +18,7 @@ public class MessagingControllerCommands {
     static final String COMMAND_REPLACE = "replace";
     static final String COMMAND_MARK_ALL_AS_READ = "mark_all_as_read";
     static final String COMMAND_SET_FLAG = "set_flag";
+    static final String COMMAND_MUTE_SENDER = "mute_sender";
     static final String COMMAND_DELETE = "delete";
     static final String COMMAND_EXPUNGE = "expunge";
     static final String COMMAND_MOVE_OR_COPY = "move_or_copy";
@@ -139,6 +141,32 @@ public class MessagingControllerCommands {
         @Override
         public void execute(MessagingController controller, Account account) throws MessagingException {
             controller.processPendingSetFlag(this, account);
+        }
+    }
+
+    public static class PendingMuteSender extends PendingCommand {
+        public final long folderId;
+        public final String uid;
+
+
+        public static PendingMuteSender create(long folderId, String uid) {
+            requireValidUids(Arrays.asList(uid));
+            return new PendingMuteSender(folderId, uid);
+        }
+
+        private PendingMuteSender(long folderId, String uid) {
+            this.folderId = folderId;
+            this.uid = uid;
+        }
+
+        @Override
+        public String getCommandName() {
+            return COMMAND_MUTE_SENDER;
+        }
+
+        @Override
+        public void execute(MessagingController controller, Account account) throws MessagingException {
+            controller.processPendingMuteSender(this, account);
         }
     }
 

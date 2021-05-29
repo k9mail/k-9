@@ -120,6 +120,13 @@ class K9NotificationActionCreator implements NotificationActionCreator {
     }
 
     @Override
+    public PendingIntent createMuteSenderPendingIntent(MessageReference messageReference, int notificationId) {
+        Intent intent = NotificationActionService.createMuteSenderIntent(context, messageReference);
+
+        return PendingIntent.getService(context, notificationId, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    @Override
     public PendingIntent getEditIncomingServerSettingsIntent(Account account) {
         Intent intent = AccountSetupIncoming.intentActionEditIncomingSettings(context, account);
 

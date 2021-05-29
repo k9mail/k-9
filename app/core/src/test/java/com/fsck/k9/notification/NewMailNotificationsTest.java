@@ -1,6 +1,8 @@
 package com.fsck.k9.notification;
 
 
+import java.io.ByteArrayInputStream;
+
 import android.app.Notification;
 import androidx.core.app.NotificationManagerCompat;
 
@@ -9,10 +11,14 @@ import com.fsck.k9.K9;
 import com.fsck.k9.K9.NotificationHideSubject;
 import com.fsck.k9.K9RobolectricTest;
 import com.fsck.k9.controller.MessageReference;
+import com.fsck.k9.mail.Address;
+import com.fsck.k9.mail.internet.MimeMessage;
 import com.fsck.k9.mailstore.LocalMessage;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
@@ -272,6 +278,66 @@ public class NewMailNotificationsTest extends K9RobolectricTest {
 
         verify(notificationManager).cancel(notificationId);
         verify(notificationManager).cancel(NotificationIds.getNewMailSummaryNotificationId(account));
+    }
+
+    @Test
+    public void testMuteMailingLists() throws Exception {
+        final String MESSAGE = "From: lena@example.com\n"
+                + "List-Id: \"Lena's Personal Joke List\" <lenas-jokes.localhost>\n"
+                + "Date: Apr 1st Wed Apr  1 23:44:53 CEST 2020\n"
+                + "\n"
+                + "Hi!\n";
+
+        MimeMessage message = new MimeMessage();
+        message.parse(new ByteArrayInputStream(MESSAGE.getBytes()));
+
+        final Account account = new Account("uuid");
+        account.setMuteMailingLists(true);
+
+        assertTrue(account.isNotificationSuppressed(message));
+    }
+
+    @Test
+    public void testMutedSender() throws Exception {
+        final String BOB_ADDRESS = "bob@example.com";
+
+        LocalMessage message = createLocalMessage();
+        when(message.getSender()).thenReturn(new Address[] { new Address(BOB_ADDRESS) });
+
+        final Account account = new Account("uuid");
+        account.setMutedSenders(BOB_ADDRESS);
+
+        assertTrue(account.isNotificationSuppressed(message));
+    }
+
+    @Test
+    public void testMuteIfSentTo() throws Exception {
+        final String ALICE_ADDRESS = "alice@example.com";
+        final String LIST_ADDRESS = "list@example.com";
+        final String ME_ADDRESS = "me@example.com";
+        final String MESSAGE = "From: Alice <" + ALICE_ADDRESS + ">\n"
+                + "To: Myself <" + ME_ADDRESS + ">\n"
+                + "Cc: Somebody Else <someone@example.com>, The List <" + LIST_ADDRESS + ">\n"
+                + "Date: Apr 1st Wed Apr  1 23:44:53 CEST 2020\n"
+                + "\n"
+                + "Hi!\n";
+
+        MimeMessage message = new MimeMessage();
+        message.parse(new ByteArrayInputStream(MESSAGE.getBytes()));
+
+        final Account account = new Account("uuid");
+
+        account.setMuteIfSentTo(LIST_ADDRESS + ";" + ME_ADDRESS);
+        assertTrue(account.isNotificationSuppressed(message));
+
+        account.setMuteIfSentTo(ME_ADDRESS);
+        assertTrue(account.isNotificationSuppressed(message));
+
+        account.setMuteIfSentTo(LIST_ADDRESS);
+        assertTrue(account.isNotificationSuppressed(message));
+
+        account.setMuteIfSentTo(ALICE_ADDRESS);
+        assertFalse(account.isNotificationSuppressed(message));
     }
 
     private Account createAccount() {

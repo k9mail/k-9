@@ -70,6 +70,9 @@ public class WearNotificationsTest extends RobolectricTest {
         PendingIntent markAsReadPendingIntent = createFakePendingIntent(2);
         when(actionCreator.createMarkMessageAsReadPendingIntent(messageReference, notificationId))
                 .thenReturn(markAsReadPendingIntent);
+        PendingIntent muteSenderPendingIntent = createFakePendingIntent(3);
+        when(actionCreator.createMuteSenderPendingIntent(messageReference, notificationId))
+                .thenReturn(muteSenderPendingIntent);
 
         Notification result = wearNotifications.buildStackedNotification(account, holder);
 
@@ -77,7 +80,8 @@ public class WearNotificationsTest extends RobolectricTest {
         verifyExtendWasOnlyCalledOnce();
         verifyAddAction(resourceProvider.getWearIconReplyAll(), "Reply", replyPendingIntent);
         verifyAddAction(resourceProvider.getWearIconMarkAsRead(), "Mark Read", markAsReadPendingIntent);
-        verifyNumberOfActions(2);
+        verifyAddAction(resourceProvider.getWearIconMuteSender(), "Mute Sender", muteSenderPendingIntent);
+        verifyNumberOfActions(3);
     }
 
     @Test

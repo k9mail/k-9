@@ -102,6 +102,7 @@ class DeviceNotifications extends BaseNotifications {
                 .setGroupSummary(true);
 
         NotificationContent content = holder.content;
+        addMuteSenderAction(builder, content, notificationId);
         addReplyAction(builder, content, notificationId);
         addMarkAsReadAction(builder, content, notificationId);
         addDeleteAction(builder, content, notificationId);
@@ -217,6 +218,16 @@ class DeviceNotifications extends BaseNotifications {
                 actionCreator.createReplyPendingIntent(messageReference, notificationId);
 
         builder.addAction(icon, title, replyToMessagePendingIntent);
+    }
+
+    private void addMuteSenderAction(Builder builder, NotificationContent content, int notificationId) {
+        int icon = resourceProvider.getIconMuteSender();
+        String title = resourceProvider.actionMuteSender();
+
+        MessageReference messageReference = content.messageReference;
+        PendingIntent action = actionCreator.createMuteSenderPendingIntent(messageReference, notificationId);
+
+        builder.addAction(icon, title, action);
     }
 
     private boolean isPrivacyModeActive() {

@@ -90,6 +90,11 @@ class K9NotificationStrategy(private val contacts: Contacts) : NotificationStrat
             return false
         }
 
+        if (account.isNotificationSuppressed(message)) {
+            Timber.v("No notification: Message matches suppression pattern")
+            return false
+        }
+
         return true
     }
 }

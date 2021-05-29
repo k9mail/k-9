@@ -25,5 +25,6 @@ object Migrations {
         // 77: No longer necessary
         if (oldVersion < 78) MigrationTo78(db).removeServerIdFromLocalFolders()
         if (oldVersion < 79) MigrationTo79(db).updateDeleteMessageTrigger()
+        if (oldVersion < 80) MigrationTo80(db).addNotificationRuleTables()
     }
 }

@@ -28,3 +28,4 @@ build.xml
 proguard-project.txt
 .idea/
 *.iml
+/app/k9mail/release

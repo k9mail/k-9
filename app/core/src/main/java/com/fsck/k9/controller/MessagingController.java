@@ -50,10 +50,12 @@ import com.fsck.k9.controller.MessagingControllerCommands.PendingExpunge;
 import com.fsck.k9.controller.MessagingControllerCommands.PendingMarkAllAsRead;
 import com.fsck.k9.controller.MessagingControllerCommands.PendingMoveAndMarkAsRead;
 import com.fsck.k9.controller.MessagingControllerCommands.PendingMoveOrCopy;
+import com.fsck.k9.controller.MessagingControllerCommands.PendingMuteSender;
 import com.fsck.k9.controller.MessagingControllerCommands.PendingReplace;
 import com.fsck.k9.controller.MessagingControllerCommands.PendingSetFlag;
 import com.fsck.k9.controller.ProgressBodyFactory.ProgressListener;
 import com.fsck.k9.helper.MutableBoolean;
+import com.fsck.k9.mail.Address;
 import com.fsck.k9.mail.AuthenticationFailedException;
 import com.fsck.k9.mail.CertificateValidationException;
 import com.fsck.k9.mail.FetchProfile;
@@ -991,6 +993,22 @@ public class MessagingController {
         Backend backend = getBackend(account);
         String folderServerId = getFolderServerId(account, command.folderId);
         backend.setFlag(folderServerId, command.uids, command.flag, command.newState);
+    }
+
+    private void queueMuteSender(Account account, long folderId, boolean newState, Flag flag, List<String> uids) {
+        putBackground("queueMuteSender", null, () -> {
+            PendingCommand command = PendingSetFlag.create(folderId, newState, flag, uids);
+            queuePendingCommand(account, command);
+            processPendingCommands(account);
+        });
+    }
+
+    void processPendingMuteSender(PendingMuteSender command, Account account) throws MessagingException {
+        Message message = loadMessage(account, command.folderId, command.uid);
+
+        for (Address address : message.getSender())
+            account.addMutedSender(address.getAddress());
+        preferences.saveAccount(account);
     }
 
     private void queueDelete(Account account, long folderId, List<String> uids) {
@@ -1959,6 +1977,22 @@ public class MessagingController {
             putBackground("deleteMessages", null, () ->
                     deleteMessagesSynchronous(account, messageFolder.getDatabaseId(), accountMessages)
             );
+        });
+    }
+
+    public void muteSender(MessageReference messageReference) {
+        actOnMessagesGroupedByAccountAndFolder(Collections.singletonList(messageReference), (account, messageFolder, accountMessages) -> {
+            putBackground("muteSender", null, () -> {
+                for (Message message : accountMessages) {
+                    for (Address address : message.getFrom()) {
+                        account.addMutedSender(address.getAddress());
+                    }
+                    for (Address address : message.getSender()) {
+                        account.addMutedSender(address.getAddress());
+                    }
+                }
+                preferences.saveAccount(account);
+            });
         });
     }
 

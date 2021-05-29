@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:orientation="vertical">
+
+    <TextView
+            android:id="@+id/edit_email_address_label"
+            android:layout_width="312dp"
+            android:layout_height="wrap_content"
+            android:text="Email address :"
+            android:layout_marginLeft="5dp"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+    <EditText
+            android:id="@+id/edit_email_address"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:layout_marginTop="10dp"
+            android:inputType="textEmailAddress">
+
+        <requestFocus />
+    </EditText>
+</LinearLayout>

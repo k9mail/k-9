@@ -227,6 +227,25 @@ class StoreSchemaDefinition implements SchemaDefinition {
         db.execSQL("CREATE TABLE pending_commands " +
                 "(id INTEGER PRIMARY KEY, command TEXT, data TEXT)");
 
+        db.execSQL("DROP TABLE IF EXISTS notification_rule_clauses");
+        db.execSQL("CREATE TABLE notification_rule_clauses (" +
+                "id INTEGER PRIMARY KEY, " +
+                "notification_rule_id INTEGER NOT NULL, " +
+                "property TEXT NOT NULL, " +
+                "property_extra TEXT, " +
+                "match TEXT NOT NULL, " +
+                "match_extra TEXT " +
+                ")");
+
+        db.execSQL("DROP TABLE IF EXISTS notification_rules");
+        db.execSQL("CREATE TABLE notification_rules (" +
+                "id INTEGER PRIMARY KEY, " +
+                "description TEXT NOT NULL, " +
+                "enabled INTEGER DEFAULT 1," +
+                "action TEXT NOT NULL, " +
+                "action_extra TEXT NOT NULL " +
+                ")");
+
         db.execSQL("DROP TRIGGER IF EXISTS delete_folder");
         db.execSQL("CREATE TRIGGER delete_folder BEFORE DELETE ON folders BEGIN DELETE FROM messages WHERE old.id = folder_id; END;");
 
@@ -244,6 +263,13 @@ class StoreSchemaDefinition implements SchemaDefinition {
                 "DELETE FROM message_parts WHERE root = OLD.message_part_id; " +
                 "DELETE FROM messages_fulltext WHERE docid = OLD.id; " +
                 "DELETE FROM threads WHERE message_id = OLD.id; " +
+                "END");
+
+        db.execSQL("DROP TRIGGER IF EXISTS delete_notification_rule_clauses");
+        db.execSQL("CREATE TRIGGER delete_notification_rule_clauses " +
+                "BEFORE DELETE ON notification_rules " +
+                "BEGIN " +
+                "DELETE FROM notification_rule_clauses WHERE old.id = notification_rule_id; " +
                 "END");
 
         db.execSQL("DROP TABLE IF EXISTS messages_fulltext");
