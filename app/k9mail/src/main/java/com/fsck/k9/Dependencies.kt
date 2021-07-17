@@ -4,6 +4,7 @@ import com.fsck.k9.backends.backendsModule
 import com.fsck.k9.controller.ControllerExtension
 import com.fsck.k9.crypto.EncryptionExtractor
 import com.fsck.k9.crypto.openpgp.OpenPgpEncryptionExtractor
+import com.fsck.k9.mail.oauth.oauth2Module
 import com.fsck.k9.notification.notificationModule
 import com.fsck.k9.preferences.K9StoragePersister
 import com.fsck.k9.preferences.StoragePersister
@@ -38,5 +39,6 @@ val appModules = listOf(
     notificationModule,
     resourcesModule,
     backendsModule,
-    storageModule
+    storageModule,
+    oauth2Module
 )

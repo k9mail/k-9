@@ -9,8 +9,7 @@ import timber.log.Timber;
 
 
 /**
- * Parses Google's Error/Challenge responses
- * See: https://developers.google.com/gmail/xoauth2_protocol#error_response
+ * Parses Google's Error/Challenge responses See: https://developers.google.com/gmail/xoauth2_protocol#error_response
  */
 public class XOAuth2ChallengeParser {
     public static final String BAD_RESPONSE = "400";

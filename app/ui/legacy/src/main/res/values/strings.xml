@@ -378,6 +378,7 @@ Please submit bug reports, contribute new features and ask questions at
     <string name="account_setup_auth_type_insecure_password">Password, transmitted insecurely</string>
     <string name="account_setup_auth_type_encrypted_password">Encrypted password</string>
     <string name="account_setup_auth_type_tls_client_certificate">Client certificate</string>
+    <string name="account_setup_auth_type_xoauth2">XOauth2 (Gmail, Outlook)</string>
 
     <string name="account_setup_incoming_title">Incoming server settings</string>
     <string name="account_setup_incoming_username_label">Username</string>

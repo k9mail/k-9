@@ -13,15 +13,22 @@ import java.util.Locale;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.webkit.CookieManager;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentTransaction;
@@ -29,6 +36,9 @@ import com.fsck.k9.Account;
 import com.fsck.k9.DI;
 import com.fsck.k9.LocalKeyStoreManager;
 import com.fsck.k9.Preferences;
+import com.fsck.k9.mail.oauth.authorizationserver.codegrantflow.OAuth2NeedUserPromptException;
+import com.fsck.k9.mail.oauth.authorizationserver.codegrantflow.OAuth2PromptRequestHandler;
+import com.fsck.k9.mail.oauth.authorizationserver.codegrantflow.OAuth2CodeGrantFlowManager;
 import com.fsck.k9.controller.MessagingController;
 import com.fsck.k9.fragment.ConfirmationDialogFragment;
 import com.fsck.k9.fragment.ConfirmationDialogFragment.ConfirmationDialogFragmentListener;
@@ -46,7 +56,7 @@ import timber.log.Timber;
 /**
  * Checks the given settings to make sure that they can be used to send and
  * receive mail.
- * 
+ *
  * XXX NOTE: The manifest for this app has it ignore config changes, because
  * it doesn't correctly deal with restarting while its thread is running.
  */
@@ -89,6 +99,10 @@ public class AccountSetupCheckSettings extends K9Activity implements OnClickList
 
     private boolean mDestroyed;
 
+    private Dialog authDialog;
+
+    private OAuth2CodeGrantFlowManager oAuth2CodeGrantFlowManager;
+
     public static void actionCheckSettings(Activity context, Account account,
             CheckDirection direction) {
         Intent i = new Intent(context, AccountSetupCheckSettings.class);
@@ -111,6 +125,9 @@ public class AccountSetupCheckSettings extends K9Activity implements OnClickList
         String accountUuid = getIntent().getStringExtra(EXTRA_ACCOUNT);
         mAccount = Preferences.getPreferences(this).getAccount(accountUuid);
         mDirection = (CheckDirection) getIntent().getSerializableExtra(EXTRA_CHECK_DIRECTION);
+
+        oAuth2CodeGrantFlowManager = DI.get(OAuth2CodeGrantFlowManager.class);
+        oAuth2CodeGrantFlowManager.setPromptRequestHandler(promptRequestHandler);
 
         new CheckAccountTask(mAccount).execute(mDirection);
     }
@@ -135,6 +152,7 @@ public class AccountSetupCheckSettings extends K9Activity implements OnClickList
     @Override
     public void onDestroy() {
         super.onDestroy();
+        oAuth2CodeGrantFlowManager.setPromptRequestHandler(null);
         mDestroyed = true;
         mCanceled = true;
     }
@@ -430,22 +448,32 @@ public class AccountSetupCheckSettings extends K9Activity implements OnClickList
                     return null;
                 }
 
-                clearCertificateErrorNotifications(direction);
+                try {
+                    clearCertificateErrorNotifications(direction);
 
-                checkServerSettings(direction);
+                    checkServerSettings(direction);
 
-                if (cancelled()) {
-                    return null;
+                    if (cancelled()) {
+                        return null;
+                    }
+
+                    setResult(RESULT_OK);
+                    finish();
+                } catch (OAuth2NeedUserPromptException ignored) {
+                    //let the user do oauth2 flow procedure through webview
                 }
 
-                setResult(RESULT_OK);
-                finish();
-
             } catch (AuthenticationFailedException afe) {
-                Timber.e(afe, "Error while testing settings");
-                showErrorDialog(
-                        R.string.account_setup_failed_dlg_auth_message_fmt,
-                        afe.getMessage() == null ? "" : afe.getMessage());
+                if (afe.getMessage().equals(AuthenticationFailedException.OAUTH2_ERROR_INVALID_REFRESH_TOKEN)) {
+                    //Do it it in another way
+                    oAuth2CodeGrantFlowManager.invalidateRefreshToken(mAccount.getEmail());
+                    runOnUiThread(() -> new CheckAccountTask(mAccount).execute(mDirection));
+                } else {
+                    Timber.e(afe, "Error while testing settings");
+                    showErrorDialog(
+                            R.string.account_setup_failed_dlg_auth_message_fmt,
+                            afe.getMessage() == null ? "" : afe.getMessage());
+                }
             } catch (CertificateValidationException cve) {
                 handleCertificateValidationException(cve);
             } catch (Exception e) {
@@ -522,5 +550,68 @@ public class AccountSetupCheckSettings extends K9Activity implements OnClickList
         protected void onProgressUpdate(Integer... values) {
             setMessage(values[0]);
         }
+    }
+
+    private final OAuth2PromptRequestHandler promptRequestHandler = new OAuth2PromptRequestHandler() {
+
+        @Override
+        public void handleRedirectUrl(WebViewClient webViewClient, String url) {
+            openUrl(webViewClient, url);
+        }
+
+        @Override
+        public void onObtainCodeSuccessful() {
+            if (authDialog != null) {
+                authDialog.dismiss();
+                authDialog = null;
+            }
+        }
+        @Override
+        public void onObtainAccessTokenSuccessful() {
+            //restart a settings check
+            new CheckAccountTask(mAccount).execute(mDirection);
+        }
+
+        @Override
+        public void onError(String errorMessage) {
+            Toast.makeText(AccountSetupCheckSettings.this, errorMessage, Toast.LENGTH_LONG).show();
+            finish();
+        }
+    };
+
+    private void openUrl(WebViewClient webViewClient, String url) {
+        runOnUiThread(() -> {
+            CookieManager cookieManager = CookieManager.getInstance();
+            //noinspection deprecation
+            cookieManager.removeAllCookie();
+
+            authDialog = new Dialog(this);
+            authDialog.setContentView(R.layout.oauth_webview);
+            WebView web = authDialog.findViewById(R.id.web_view);
+            web.getSettings().setSaveFormData(false);
+            web.getSettings().setJavaScriptEnabled(true);
+            web.getSettings().setUserAgentString("K9 mail");
+
+            web.setWebViewClient(webViewClient);
+
+            web.getSettings().setUseWideViewPort(true);
+
+            authDialog.setCancelable(false);
+            authDialog.show();
+
+            authDialog.setOnKeyListener((arg0, keyCode, event) -> {
+                if (keyCode == KeyEvent.KEYCODE_BACK) {
+                    if (web.canGoBack()) {
+                        web.goBack();
+                    } else {
+                        onCancel();
+                    }
+                    return true;
+                }
+                return false;
+            });
+
+            web.loadUrl(url);
+        });
     }
 }

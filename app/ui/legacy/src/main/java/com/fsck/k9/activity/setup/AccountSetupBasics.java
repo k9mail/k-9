@@ -20,6 +20,7 @@ import com.fsck.k9.DI;
 import com.fsck.k9.EmailAddressValidator;
 import com.fsck.k9.Preferences;
 import com.fsck.k9.account.AccountCreator;
+import com.fsck.k9.mail.oauth.OAuth2Provider;
 import com.fsck.k9.ui.base.K9Activity;
 import com.fsck.k9.activity.setup.AccountSetupCheckSettings.CheckDirection;
 import com.fsck.k9.autodiscovery.api.DiscoveredServerSettings;
@@ -35,6 +36,7 @@ import com.fsck.k9.ui.ConnectionSettings;
 import com.fsck.k9.view.ClientCertificateSpinner;
 import com.fsck.k9.view.ClientCertificateSpinner.OnClientCertificateChangedListener;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import timber.log.Timber;
 
 /**
@@ -56,10 +58,12 @@ public class AccountSetupBasics extends K9Activity
 
     private TextInputEditText mEmailView;
     private TextInputEditText mPasswordView;
+    private TextInputLayout mPasswordLayoutView;
     private CheckBox mClientCertificateCheckBox;
     private ClientCertificateSpinner mClientCertificateSpinner;
     private Button mNextButton;
     private Button mManualSetupButton;
+    private View mAdvandedOptionsFoldable;
     private Account mAccount;
     private ViewGroup mAllowClientCertificateView;
 
@@ -78,12 +82,14 @@ public class AccountSetupBasics extends K9Activity
         setTitle(R.string.account_setup_basics_title);
         mEmailView = findViewById(R.id.account_email);
         mPasswordView = findViewById(R.id.account_password);
+        mPasswordLayoutView = findViewById(R.id.account_password_input_layout);
         mClientCertificateCheckBox = findViewById(R.id.account_client_certificate);
         mClientCertificateSpinner = findViewById(R.id.account_client_certificate_spinner);
         mAllowClientCertificateView = findViewById(R.id.account_allow_client_certificate);
 
         mNextButton = findViewById(R.id.next);
         mManualSetupButton = findViewById(R.id.manual_setup);
+        mAdvandedOptionsFoldable = findViewById(R.id.foldable_advanced_options);
         mNextButton.setOnClickListener(this);
         mManualSetupButton.setOnClickListener(this);
     }
@@ -177,14 +183,29 @@ public class AccountSetupBasics extends K9Activity
         String clientCertificateAlias = mClientCertificateSpinner.getAlias();
         String email = mEmailView.getText().toString();
 
+        boolean xoauth2 = false;
+
+        if (email.contains("@")) {
+            String[] split = email.split("@");
+            if (split.length == 2) {
+                String domain = split[1];
+                xoauth2 = OAuth2Provider.Companion.isXOAuth2(domain);
+            }
+        }
+
         boolean valid = Utility.requiredFieldValid(mEmailView)
-                && ((!clientCertificateChecked && Utility.requiredFieldValid(mPasswordView))
+                && ((!clientCertificateChecked && (Utility.requiredFieldValid(mPasswordView) || xoauth2))
                         || (clientCertificateChecked && clientCertificateAlias != null))
                 && mEmailValidator.isValidAddressOnly(email);
 
         mNextButton.setEnabled(valid);
         mNextButton.setFocusable(valid);
         mManualSetupButton.setEnabled(valid);
+
+        mPasswordLayoutView.setVisibility(xoauth2 ? View.GONE : View.VISIBLE);
+        mAdvandedOptionsFoldable.setVisibility(xoauth2 ? View.GONE : View.VISIBLE);
+        mManualSetupButton.setVisibility(xoauth2 ? View.GONE : View.VISIBLE);
+
         /*
          * Dim the next button's icon to 50% if the button is disabled.
          * TODO this can probably be done with a stateful drawable. Check into it.

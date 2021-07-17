@@ -12,7 +12,7 @@ class AuthTypeAdapter extends ArrayAdapter<AuthTypeHolder> {
     }
 
     public static AuthTypeAdapter get(Context context) {
-        AuthType[] authTypes = new AuthType[]{AuthType.PLAIN, AuthType.CRAM_MD5, AuthType.EXTERNAL};
+        AuthType[] authTypes = new AuthType[]{AuthType.PLAIN, AuthType.CRAM_MD5, AuthType.EXTERNAL, AuthType.XOAUTH2};
         AuthTypeHolder[] holders = new AuthTypeHolder[authTypes.length];
         for (int i = 0; i < authTypes.length; i++) {
             holders[i] = new AuthTypeHolder(authTypes[i], context.getResources());

@@ -27,7 +27,9 @@ class ImapBackendFactory(
     private val powerManager: PowerManager,
     private val idleRefreshManager: IdleRefreshManager,
     private val backendStorageFactory: K9BackendStorageFactory,
-    private val trustedSocketFactory: TrustedSocketFactory
+    private val trustedSocketFactory: TrustedSocketFactory,
+    private val oAuth2TokenProvider: OAuth2TokenProvider
+
 ) : BackendFactory {
     override fun createBackend(account: Account): Backend {
         val accountName = account.displayName
@@ -48,7 +50,7 @@ class ImapBackendFactory(
     }
 
     private fun createImapStore(account: Account): ImapStore {
-        val oAuth2TokenProvider: OAuth2TokenProvider? = null
+        val oAuth2TokenProvider: OAuth2TokenProvider? = oAuth2TokenProvider
         val config = createImapStoreConfig(account)
         return ImapStore.create(
             account.incomingServerSettings,
@@ -72,7 +74,7 @@ class ImapBackendFactory(
 
     private fun createSmtpTransport(account: Account): SmtpTransport {
         val serverSettings = account.outgoingServerSettings
-        val oauth2TokenProvider: OAuth2TokenProvider? = null
+        val oauth2TokenProvider: OAuth2TokenProvider? = oAuth2TokenProvider
         return SmtpTransport(serverSettings, trustedSocketFactory, oauth2TokenProvider)
     }
 

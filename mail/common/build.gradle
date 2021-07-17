@@ -12,6 +12,11 @@ dependencies {
     implementation "commons-io:commons-io:${versions.commonsIo}"
     implementation "androidx.annotation:annotation:${versions.androidxAnnotation}"
     implementation "com.jakewharton.timber:timber:${versions.timber}"
+    implementation "org.koin:koin-android:${versions.koin}"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:${versions.kotlinCoroutines}"
+
+    implementation "com.squareup.retrofit2:retrofit:${versions.retrofit}"
+    implementation "com.squareup.retrofit2:converter-gson:${versions.retrofit}"
 
     testImplementation project(":mail:testing")
     testImplementation "org.robolectric:robolectric:${versions.robolectric}"
@@ -34,6 +39,13 @@ android {
     buildTypes {
         debug {
             testCoverageEnabled rootProject.testCoverage
+            buildConfigField "String", "GOOGLE_CLIENT_ID", "\"*********add debug credentials here***************.apps.googleusercontent.com\""
+            buildConfigField "String", "GOOGLE_CLIENT_ID_PACKAGE_NAME", "\"com.fsck.k9.debug\""
+        }
+
+        release {
+            buildConfigField "String", "GOOGLE_CLIENT_ID", "\"*********add release credentials here***************.apps.googleusercontent.com\""
+            buildConfigField "String", "GOOGLE_CLIENT_ID_PACKAGE_NAME", "\"com.fsck.k9\""
         }
     }
 
