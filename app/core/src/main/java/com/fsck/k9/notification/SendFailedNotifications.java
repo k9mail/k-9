@@ -3,6 +3,7 @@ package com.fsck.k9.notification;
 
 import android.app.PendingIntent;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationCompat.BigTextStyle;
 import androidx.core.app.NotificationManagerCompat;
 
 import com.fsck.k9.Account;
@@ -42,6 +43,7 @@ class SendFailedNotifications {
                 .setContentTitle(title)
                 .setContentText(text)
                 .setContentIntent(folderListPendingIntent)
+                .setStyle(new BigTextStyle().bigText(text))
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setCategory(NotificationCompat.CATEGORY_ERROR);
 
