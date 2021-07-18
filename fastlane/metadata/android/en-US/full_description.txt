@@ -1,0 +1,4 @@
+E-mail client supporting multiple accounts, POP3, IMAP and Push IMAP.
+Can do OpenPGP encryption if https://f-droid.org/packages/org.sufficientlysecure.keychain is installed.
+Settings and account configurations can be exported so that they can be imported easily if you are switching packages/signatures:
+a file manager will need to be already installed to achieve this.
